@@ -9,7 +9,9 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import javax.swing.JOptionPane;
+import util.Auditoria;
 import util.PasswordUtil;
+import util.Sesion;
 public class Login extends javax.swing.JFrame {
 
     public Login() {
@@ -111,7 +113,7 @@ public class Login extends javax.swing.JFrame {
                 }
 
                 String sql =
-                    "SELECT nombre, password_hash, salt, activo FROM usuarios WHERE usuario=?";
+                    "SELECT id, nombre, rol, password_hash, salt, activo FROM usuarios WHERE usuario=?";
 
                 try (PreparedStatement ps = cn.prepareStatement(sql)) {
 
@@ -120,7 +122,9 @@ public class Login extends javax.swing.JFrame {
                     try (ResultSet rs = ps.executeQuery()) {
 
                         boolean autenticado = false;
+                        int id = 0;
                         String nombre = null;
+                        String rol = null;
 
                         if (rs.next()) {
                             boolean activo = rs.getBoolean("activo");
@@ -129,10 +133,15 @@ public class Login extends javax.swing.JFrame {
                                 rs.getString("salt"),
                                 rs.getString("password_hash")
                             );
+                            id = rs.getInt("id");
                             nombre = rs.getString("nombre");
+                            rol = rs.getString("rol");
                         }
 
                         if (autenticado) {
+                            Sesion.iniciar(id, usuario, nombre, rol);
+                            Auditoria.registrar(cn, "LOGIN", "usuarios", id, null);
+
                             JOptionPane.showMessageDialog(
                                 this,
                                 "Bienvenido " + nombre

@@ -9,6 +9,7 @@ public class MenuPrincipal extends javax.swing.JFrame {
 
     public MenuPrincipal() {
         initComponents();
+        setTitle("Sistema de Psicología — " + util.Sesion.getNombre() + " (" + util.Sesion.getRol() + ")");
     }
 
     @SuppressWarnings("unchecked")
