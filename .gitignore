@@ -1,0 +1,14 @@
+# NetBeans build artifacts
+/build/
+/dist/
+/nbproject/private/
+
+# Compiled class files
+*.class
+
+# Claude Code local settings
+.claude/settings.local.json
+
+# OS files
+Thumbs.db
+.DS_Store
