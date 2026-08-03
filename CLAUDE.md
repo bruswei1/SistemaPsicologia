@@ -4,10 +4,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project overview
 
-SistemaPsicologia is a Java Swing desktop application (NetBeans/Ant `j2seproject`) for managing a psychology practice (patients, appointments, sessions). It is an early-stage/student project: login, main menu, and patient registration exist; `MenuPrincipal`'s Citas/Sesiones buttons are not yet wired to actions.
+SistemaPsicologia is a Java Swing desktop application (NetBeans/Ant `j2seproject`) for managing a psychology practice (patients, appointments, sessions). Implemented so far: login, role-based access, patient clinical history, appointment agenda, SOAP session notes, and patient file attachments.
 
 - Java target: 1.8 (`javac.source`/`javac.target=1.8` in `nbproject/project.properties`)
-- UI: Java Swing, forms built with the NetBeans GUI Builder (`.form` files paired with `.java` files under `src/Vista`)
+- UI: Java Swing with [FlatLaf](https://www.formdev.com/flatlaf/) (`FlatLightLaf`) as the look and feel, set once in `main()`. Only `MenuPrincipal` is still built with the NetBeans GUI Builder (paired `.form` file); every other `Vista` screen, including `Login`, is hand-coded (`GridBagLayout`/`BorderLayout`, no `.form` file) — see Architecture below.
 - Persistence: raw JDBC against MySQL (no ORM, no connection pool)
 - Entry point: `Vista.Login` (`main.class=Vista.Login` in `nbproject/project.properties`)
 
@@ -22,11 +22,9 @@ This is a NetBeans Ant project. There is no Maven/Gradle wrapper.
 
 ### Dependencies
 
-The only external dependency is the MySQL JDBC driver, referenced by an **absolute local path** in `nbproject/project.properties`:
-```
-file.reference.mysql-connector-j-9.7.0.jar=C:\Users\bru\Downloads\mysql-connector-j-9.7.0\...\mysql-connector-j-9.7.0.jar
-```
-This means the project will not build on another machine without that jar present at that exact path (or the property updated) — there's no `lib/` folder or dependency manager. If you add another dependency, follow the same pattern (add a `file.reference.*` property and add it to `javac.classpath`), but flag the portability issue to the user if relevant.
+Two external jars, both wired via `file.reference.*` properties + `javac.classpath` in `nbproject/project.properties` — there's no Maven/Gradle dependency manager:
+- MySQL JDBC driver, referenced by an **absolute local path**: `file.reference.mysql-connector-j-9.7.0.jar=C:\Users\bru\Downloads\mysql-connector-j-9.7.0\...\mysql-connector-j-9.7.0.jar`. This means the project will not build on another machine without that exact jar at that exact path (or the property updated).
+- FlatLaf, checked into the repo at `lib/flatlaf-3.5.4.jar` and referenced with a **project-relative path** (`file.reference.flatlaf-3.5.4.jar=lib/flatlaf-3.5.4.jar`) — this one *does* build on another machine out of the box. Prefer this `lib/` + relative-path pattern for any future dependency instead of copying the MySQL driver's absolute-path approach; flag the portability issue only if you have to touch the MySQL reference itself.
 
 ## Database
 
@@ -47,7 +45,7 @@ docker compose up -d
   ```
   docker exec -i psicologia_mysql mysql -uroot psicologia < path/to/script.sql
   ```
-- Current schema: `db-init/01_schema.sql` creates `usuarios` (`id, usuario, password_hash, salt, nombre, rol, activo, creado_en`); `db-init/02_pacientes.sql` creates `pacientes` (`id, nombre, apellido, fecha_nacimiento, genero, telefono, email, direccion, motivo_consulta, psicologo_id, antecedentes_personales, antecedentes_familiares, anamnesis, creado_en`); `db-init/03_fase1_roles_historia_auditoria.sql` adds `usuarios.rol`, the `pacientes` clinical/ownership columns, and creates `auditoria` (`id, usuario_id, usuario_nombre, accion, entidad, entidad_id, detalle, fecha`).
+- Current schema: `db-init/01_schema.sql` creates `usuarios` (`id, usuario, password_hash, salt, nombre, rol, activo, creado_en`); `db-init/02_pacientes.sql` creates `pacientes` (`id, nombre, apellido, fecha_nacimiento, genero, telefono, email, direccion, motivo_consulta, psicologo_id, antecedentes_personales, antecedentes_familiares, anamnesis, creado_en`); `db-init/03_fase1_roles_historia_auditoria.sql` adds `usuarios.rol`, the `pacientes` clinical/ownership columns, and creates `auditoria` (`id, usuario_id, usuario_nombre, accion, entidad, entidad_id, detalle, fecha`); `db-init/04_fase2_agenda_sesiones_documentos.sql` creates `turnos` (appointments), `sesiones` (SOAP notes), and `documentos_paciente` (file attachment metadata).
 
 ### Auth model
 
@@ -66,17 +64,22 @@ Role behavior implemented so far (in `RegistroPaciente`):
 
 ### Auditoria
 
-`src/util/Auditoria.java` (`Auditoria.registrar(Connection, accion, entidad, entidadId, detalle)`) inserts one row per action into `auditoria`, reading the actor from `Sesion`. Call it inside the same try-with-resources `Connection` as the operation it's logging (see `Login.jButton1ActionPerformed` for `LOGIN`, `RegistroPaciente.guardarPaciente`/`cargarPaciente` for `CREAR_PACIENTE`/`EDITAR_PACIENTE`/`VER_PACIENTE`). This satisfies Ley 6534/20-style "who accessed which record when" tracking — extend it by calling `Auditoria.registrar` from any new screen that reads or writes patient data, using the same `entidad`/`entidad_id` convention (table name, row id).
+`src/util/Auditoria.java` (`Auditoria.registrar(Connection, accion, entidad, entidadId, detalle)`) inserts one row per action into `auditoria`, reading the actor from `Sesion`. Call it inside the same try-with-resources `Connection` as the operation it's logging (see `Login.autenticar` for `LOGIN`; `RegistroPaciente` for `CREAR_PACIENTE`/`EDITAR_PACIENTE`/`VER_PACIENTE`/`ADJUNTAR_DOCUMENTO`/`ELIMINAR_DOCUMENTO`; `Agenda` for `CREAR_TURNO`/`EDITAR_TURNO`; `Sesiones` for `CREAR_SESION`/`EDITAR_SESION`/`VER_SESION`). This satisfies Ley 6534/20-style "who accessed which record when" tracking — extend it by calling `Auditoria.registrar` from any new screen that reads or writes patient data, using the same `entidad`/`entidad_id` convention (table name, row id).
+
+### Patient file attachments
+
+`RegistroPaciente`'s "Documentos" tab copies user-selected files into `adjuntos/<paciente_id>/<timestamp>_<filename>` (relative to the working directory the app is run from) via `java.nio.file.Files.copy`; `documentos_paciente.ruta_archivo` stores that relative path, and "Abrir" opens it with `Desktop.getDesktop().open(...)`. Files are **not** stored as DB blobs. The `adjuntos/` folder is git-ignored (it's local runtime data, not source) — don't assume it exists on a fresh checkout; it's created on first attachment (`File.mkdirs()`).
 
 ## Architecture
 
 Four packages under `src/`:
 - `Conexion` — single class `Conexion.conectar()` opens a new `java.sql.Connection` per call (no pooling/singleton). Callers are responsible for closing it (use try-with-resources — `Vista.Login` does this).
 - `util` — cross-cutting helpers with no UI dependency: `PasswordUtil` (hashing), `Sesion` (current-user holder), `Auditoria` (access log writer).
-- `Vista` — Swing JFrames. `Login` and `MenuPrincipal` are generated/maintained by the NetBeans Form Editor (paired `.form` files); **the region between `//GEN-BEGIN:initComponents` and `//GEN-END:initComponents` (and the `variables` block) is regenerated by the Form Editor and should not be hand-edited** — put custom logic in constructors (after the `initComponents()` call) and in the `*ActionPerformed` method bodies, which are safe to edit. When adding an `Events` handler to a NetBeans-managed component, update both the `.form` XML (`<Events>` block) and the `.java` `initComponents()` registration, or the GUI Builder will silently drop your listener next time the form is saved.
-  - `Login` — authenticates against `usuarios` via `PasswordUtil.verificar`, populates `Sesion`, logs `LOGIN` to `auditoria`, then opens `MenuPrincipal` and disposes itself.
-  - `MenuPrincipal` — main menu shell; the "Pacientes" button opens `RegistroPaciente`. Citas/Sesiones are not yet implemented.
-  - `RegistroPaciente` — patient history screen: a `JTabbedPane` (Datos personales / Anamnesis y antecedentes) over a form, plus a live, role-filtered table of `pacientes`. Selecting a table row loads that patient back into the form for editing (`cargarPaciente`, logs `VER_PACIENTE`); `guardarPaciente` does an `INSERT` or `UPDATE` depending on whether a patient is currently loaded (`pacienteIdActual`). Unlike `Login`/`MenuPrincipal`, this one is **hand-coded with `GridBagLayout`, with no paired `.form` file** — it isn't editable in the NetBeans GUI Form Editor. Follow this same plain-code pattern for further CRUD screens unless you specifically want GUI Builder support (which requires authoring a matching `.form` XML).
-- `Principal` — a standalone `main()` (`Principal.main`) that just tests the DB connection; not the app's real entry point (that's `Vista.Login`).
+- `Vista` — Swing JFrames. **Only `MenuPrincipal` is still generated/maintained by the NetBeans Form Editor** (paired `MenuPrincipal.form`); **the region between `//GEN-BEGIN:initComponents` and `//GEN-END:initComponents` (and the `variables` block) is regenerated by the Form Editor and should not be hand-edited** there — put custom logic in the constructor (after `initComponents()`) and in `*ActionPerformed` method bodies. When adding an `Events` handler to a NetBeans-managed component, update both the `.form` XML (`<Events>` block) and the `.java` `initComponents()` registration, or the GUI Builder will silently drop your listener next time the form is saved. Every other screen (`Login`, `RegistroPaciente`, `Agenda`, `Sesiones`) is **hand-coded with `GridBagLayout`/`BorderLayout`, with no paired `.form` file** — not editable in the GUI Form Editor. Follow this plain-code pattern for further screens unless you specifically want GUI Builder support (which requires authoring a matching `.form` XML from scratch).
+  - `Login` — authenticates against `usuarios` via `PasswordUtil.verificar`, populates `Sesion`, logs `LOGIN` to `auditoria`, then opens `MenuPrincipal` and disposes itself. Sets `FlatLightLaf` in `main()` before creating any Swing component — this is the only place the look and feel is installed for the real app flow.
+  - `MenuPrincipal` — main menu shell; title bar shows the logged-in user/role. "Pacientes" opens `RegistroPaciente`, "Citas" opens `Agenda`, "Sesiones" opens `Sesiones` (disabled for role `secretaria` — SOAP notes are clinical). The second "Citas" button (`jButton4`) is unwired leftover from the original scaffold.
+  - `RegistroPaciente` — patient history screen: a `JTabbedPane` (Datos personales / Anamnesis y antecedentes / Documentos) over a form, plus a live, role-filtered table of `pacientes`. Selecting a table row loads that patient back into the form for editing (`cargarPaciente`, logs `VER_PACIENTE`); `guardarPaciente` does an `INSERT` or `UPDATE` depending on whether a patient is currently loaded (`pacienteIdActual`). The clinical and documents tabs are omitted entirely for `secretaria` (see Roles above).
+  - `Agenda` — appointment scheduling (`turnos`): create/edit turnos with paciente, psicólogo, date/time (`yyyy-MM-dd HH:mm`), duration, estado (`programado`/`completado`/`cancelado`/`ausente`); filtered to the logged-in psicólogo's own patients/turnos like `RegistroPaciente`.
+  - `Sesiones` — SOAP session notes (`sesiones`) per patient: Subjetivo/Objetivo/Análisis/Plan plus a `notas_privadas` field, and a simple start/stop cronómetro (`javax.swing.Timer`) that records `duracion_minutos`. Not reachable by `secretaria` (menu button disabled).
 
 When adding new screens, follow the existing pattern: JDBC access via `new Conexion().conectar()` wrapped in try-with-resources, `PreparedStatement` for all queries (no string-concatenated SQL — the codebase is consistent about this), read the actor from `Sesion` rather than re-querying `usuarios`, and log mutations/views to `auditoria` via `Auditoria.registrar`.

@@ -2,15 +2,20 @@ package Vista;
 
 import conexion.Conexion;
 import java.awt.BorderLayout;
+import java.awt.Desktop;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Types;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -42,10 +47,16 @@ public class RegistroPaciente extends JFrame {
     private JTextArea txtAnamnesis;
     private JTabbedPane tabs;
 
+    private JComboBox<String> cmbTipoDocumento;
+    private JTable tablaDocumentos;
+    private DefaultTableModel modeloDocumentos;
+
     private JTable tablaPacientes;
     private DefaultTableModel modeloTabla;
 
     private Integer pacienteIdActual;
+
+    private static final String CARPETA_ADJUNTOS = "adjuntos";
 
     public RegistroPaciente() {
         setTitle("Historia Clínica de Pacientes");
@@ -101,10 +112,43 @@ public class RegistroPaciente extends JFrame {
         agregarCampoClinico(panelClinico, gbcClinico, filaClinico++, "Antecedentes familiares", txtAntecedentesFamiliares);
         agregarCampoClinico(panelClinico, gbcClinico, filaClinico++, "Anamnesis", txtAnamnesis);
 
+        cmbTipoDocumento = new JComboBox<>(new String[]{"Dibujo", "Test escaneado", "Informe externo", "Audio", "Otro"});
+
+        JButton btnAdjuntar = new JButton("Adjuntar archivo");
+        btnAdjuntar.addActionListener(evt -> adjuntarArchivo());
+
+        JButton btnAbrir = new JButton("Abrir");
+        btnAbrir.addActionListener(evt -> abrirArchivo());
+
+        JButton btnEliminarDoc = new JButton("Eliminar");
+        btnEliminarDoc.addActionListener(evt -> eliminarArchivo());
+
+        JPanel panelDocToolbar = new JPanel();
+        panelDocToolbar.add(new JLabel("Tipo:"));
+        panelDocToolbar.add(cmbTipoDocumento);
+        panelDocToolbar.add(btnAdjuntar);
+        panelDocToolbar.add(btnAbrir);
+        panelDocToolbar.add(btnEliminarDoc);
+
+        modeloDocumentos = new DefaultTableModel(
+            new Object[]{"ID", "Archivo", "Tipo", "Subido por", "Fecha"}, 0
+        ) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
+        tablaDocumentos = new JTable(modeloDocumentos);
+
+        JPanel panelDocumentos = new JPanel(new BorderLayout(4, 4));
+        panelDocumentos.add(panelDocToolbar, BorderLayout.NORTH);
+        panelDocumentos.add(new JScrollPane(tablaDocumentos), BorderLayout.CENTER);
+
         tabs = new JTabbedPane();
         tabs.addTab("Datos personales", panelDatos);
         if (!Sesion.esSecretaria()) {
             tabs.addTab("Anamnesis y antecedentes", panelClinico);
+            tabs.addTab("Documentos", panelDocumentos);
         }
 
         JButton btnGuardar = new JButton("Guardar");
@@ -412,6 +456,143 @@ public class RegistroPaciente extends JFrame {
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, "Error al cargar el paciente: " + e.getMessage());
         }
+
+        if (!Sesion.esSecretaria()) {
+            cargarDocumentos(id);
+        }
+    }
+
+    private void cargarDocumentos(int pacienteId) {
+
+        modeloDocumentos.setRowCount(0);
+
+        String sql =
+            "SELECT d.id, d.nombre_archivo, d.tipo, u.nombre AS subido_por_nombre, d.subido_en, d.ruta_archivo "
+            + "FROM documentos_paciente d LEFT JOIN usuarios u ON u.id = d.subido_por "
+            + "WHERE d.paciente_id = ? ORDER BY d.subido_en DESC";
+
+        try (Connection cn = new Conexion().conectar();
+             PreparedStatement ps = cn.prepareStatement(sql)) {
+
+            ps.setInt(1, pacienteId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    modeloDocumentos.addRow(new Object[]{
+                        rs.getInt("id"),
+                        rs.getString("nombre_archivo"),
+                        rs.getString("tipo"),
+                        rs.getString("subido_por_nombre"),
+                        rs.getTimestamp("subido_en"),
+                        rs.getString("ruta_archivo")
+                    });
+                }
+            }
+
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Error al cargar documentos: " + e.getMessage());
+        }
+    }
+
+    private void adjuntarArchivo() {
+
+        if (pacienteIdActual == null) {
+            JOptionPane.showMessageDialog(this, "Guarda el paciente antes de adjuntar archivos");
+            return;
+        }
+
+        JFileChooser selector = new JFileChooser();
+        if (selector.showOpenDialog(this) != JFileChooser.APPROVE_OPTION) {
+            return;
+        }
+
+        File origen = selector.getSelectedFile();
+        String tipo = (String) cmbTipoDocumento.getSelectedItem();
+
+        try {
+            File carpetaPaciente = new File(CARPETA_ADJUNTOS, String.valueOf(pacienteIdActual));
+            carpetaPaciente.mkdirs();
+
+            String nombreDestino = System.currentTimeMillis() + "_" + origen.getName();
+            File destino = new File(carpetaPaciente, nombreDestino);
+            Files.copy(origen.toPath(), destino.toPath(), StandardCopyOption.REPLACE_EXISTING);
+
+            String rutaRelativa = CARPETA_ADJUNTOS + File.separator + pacienteIdActual + File.separator + nombreDestino;
+
+            String sql =
+                "INSERT INTO documentos_paciente (paciente_id, nombre_archivo, ruta_archivo, tipo, subido_por) VALUES (?, ?, ?, ?, ?)";
+
+            try (Connection cn = new Conexion().conectar()) {
+
+                try (PreparedStatement ps = cn.prepareStatement(sql)) {
+                    ps.setInt(1, pacienteIdActual);
+                    ps.setString(2, origen.getName());
+                    ps.setString(3, rutaRelativa);
+                    ps.setString(4, tipo);
+                    ps.setInt(5, Sesion.getUsuarioId());
+                    ps.executeUpdate();
+                }
+
+                Auditoria.registrar(cn, "ADJUNTAR_DOCUMENTO", "pacientes", pacienteIdActual, origen.getName());
+            }
+
+            cargarDocumentos(pacienteIdActual);
+
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Error al adjuntar el archivo: " + e.getMessage());
+        }
+    }
+
+    private void abrirArchivo() {
+
+        int fila = tablaDocumentos.getSelectedRow();
+        if (fila < 0) {
+            JOptionPane.showMessageDialog(this, "Selecciona un documento");
+            return;
+        }
+
+        String ruta = (String) modeloDocumentos.getValueAt(fila, 5);
+
+        try {
+            Desktop.getDesktop().open(new File(ruta));
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "No se pudo abrir el archivo: " + e.getMessage());
+        }
+    }
+
+    private void eliminarArchivo() {
+
+        int fila = tablaDocumentos.getSelectedRow();
+        if (fila < 0) {
+            JOptionPane.showMessageDialog(this, "Selecciona un documento");
+            return;
+        }
+
+        int confirmacion = JOptionPane.showConfirmDialog(
+            this, "¿Eliminar este documento?", "Confirmar", JOptionPane.YES_NO_OPTION
+        );
+        if (confirmacion != JOptionPane.YES_OPTION) {
+            return;
+        }
+
+        int id = (int) modeloDocumentos.getValueAt(fila, 0);
+        String ruta = (String) modeloDocumentos.getValueAt(fila, 5);
+
+        try (Connection cn = new Conexion().conectar()) {
+
+            try (PreparedStatement ps = cn.prepareStatement("DELETE FROM documentos_paciente WHERE id=?")) {
+                ps.setInt(1, id);
+                ps.executeUpdate();
+            }
+
+            Auditoria.registrar(cn, "ELIMINAR_DOCUMENTO", "pacientes", pacienteIdActual, ruta);
+
+            new File(ruta).delete();
+            cargarDocumentos(pacienteIdActual);
+
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Error al eliminar el documento: " + e.getMessage());
+        }
     }
 
     private void seleccionarPsicologo(Integer psicologoId) {
@@ -442,6 +623,7 @@ public class RegistroPaciente extends JFrame {
         txtAntecedentesPersonales.setText("");
         txtAntecedentesFamiliares.setText("");
         txtAnamnesis.setText("");
+        modeloDocumentos.setRowCount(0);
         if (!Sesion.esPsicologo()) {
             cmbPsicologo.setSelectedIndex(0);
         }

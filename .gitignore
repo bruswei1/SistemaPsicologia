@@ -9,6 +9,9 @@
 # Claude Code local settings
 .claude/settings.local.json
 
+# Patient file attachments (local storage, not source)
+/adjuntos/
+
 # OS files
 Thumbs.db
 .DS_Store
