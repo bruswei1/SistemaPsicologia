@@ -1,0 +1,172 @@
+========================================
+ARQUITECTURA OFICIAL - SISTEMA DE PSICOLOGÍA
+========================================
+
+## 1. BASE DE DATOS - DEFINICIÓN OFICIAL
+
+### Tabla: USUARIOS
+- id (INT, PK, AUTO_INCREMENT)
+- usuario (VARCHAR 50, UNIQUE, NOT NULL)
+- password_hash (CHAR 64, NOT NULL)
+- salt (CHAR 32, NOT NULL)
+- nombre (VARCHAR 100, NOT NULL)
+- rol (VARCHAR 20, NOT NULL, DEFAULT: 'psicologo') → admin | psicologo | secretaria
+- activo (TINYINT 1, NOT NULL, DEFAULT: 1)
+- creado_en (TIMESTAMP, DEFAULT: CURRENT_TIMESTAMP)
+
+Relaciones: FK en pacientes.psicologo_id, sesiones.psicologo_id, turnos.psicologo_id
+
+### Tabla: PACIENTES
+- id (INT, PK, AUTO_INCREMENT)
+- nombre (VARCHAR 100, NOT NULL)
+- apellido (VARCHAR 100, NOT NULL)
+- fecha_nacimiento (DATE, NULLABLE)
+- genero (VARCHAR 20, NULLABLE)
+- telefono (VARCHAR 20, NULLABLE)
+- email (VARCHAR 100, NULLABLE, UNIQUE)
+- direccion (VARCHAR 200, NULLABLE)
+- motivo_consulta (VARCHAR 255, NULLABLE)
+- psicologo_id (INT, NULLABLE, FK → usuarios.id)
+- antecedentes_personales (TEXT, NULLABLE)
+- antecedentes_familiares (TEXT, NULLABLE)
+- anamnesis (TEXT, NULLABLE)
+- creado_en (TIMESTAMP, DEFAULT: CURRENT_TIMESTAMP)
+
+Relaciones: PK en historia_psicologica.paciente_id, sesiones.paciente_id, turnos.paciente_id, documentos_paciente.paciente_id
+
+### Tabla: HISTORIA_PSICOLOGICA
+- id (INT, PK, AUTO_INCREMENT)
+- paciente_id (INT, NOT NULL, FK → pacientes.id, UNIQUE)
+- psicologo_id (INT, NULLABLE, FK → usuarios.id)
+- antecedentes (LONGTEXT, NULLABLE)
+- motivo_consulta (TEXT, NULLABLE)
+- observaciones_generales (LONGTEXT, NULLABLE)
+- diagnostico (TEXT, NULLABLE)
+- tratamiento (TEXT, NULLABLE)
+- fecha_creacion (TIMESTAMP, DEFAULT: CURRENT_TIMESTAMP)
+- ultima_actualizacion (TIMESTAMP, DEFAULT: CURRENT_TIMESTAMP, ON UPDATE: CURRENT_TIMESTAMP)
+
+Relaciones: 1-a-1 con pacientes
+
+### Tabla: SESIONES
+- id (INT, PK, AUTO_INCREMENT)
+- paciente_id (INT, NOT NULL, FK → pacientes.id)
+- psicologo_id (INT, NOT NULL, FK → usuarios.id)
+- turno_id (INT, NULLABLE, FK → turnos.id)
+- fecha (DATETIME, NOT NULL, DEFAULT: CURRENT_TIMESTAMP)
+- subjetivo (TEXT, NULLABLE)
+- objetivo (TEXT, NULLABLE)
+- analisis (TEXT, NULLABLE)
+- plan (TEXT, NULLABLE)
+- notas_privadas (TEXT, NULLABLE)
+- duracion_minutos (INT, NULLABLE)
+- creado_en (TIMESTAMP, DEFAULT: CURRENT_TIMESTAMP)
+
+Relaciones: N-a-1 con pacientes y usuarios
+
+### Tabla: TURNOS
+- id (INT, PK, AUTO_INCREMENT)
+- paciente_id (INT, NOT NULL, FK → pacientes.id)
+- psicologo_id (INT, NOT NULL, FK → usuarios.id)
+- fecha_hora (DATETIME, NOT NULL)
+- duracion_minutos (INT, NOT NULL, DEFAULT: 45)
+- estado (VARCHAR 20, NOT NULL, DEFAULT: 'programado') → programado | completado | cancelado
+- notas (VARCHAR 255, NULLABLE)
+- creado_en (TIMESTAMP, DEFAULT: CURRENT_TIMESTAMP)
+
+RESTRICCIÓN ÚNICA: (paciente_id, psicologo_id, fecha_hora, estado) NO pueden repetirse para mismo turno
+Relaciones: N-a-1 con pacientes y usuarios
+
+### Tabla: DOCUMENTOS_PACIENTE
+- id (INT, PK, AUTO_INCREMENT)
+- paciente_id (INT, NOT NULL, FK → pacientes.id)
+- nombre_archivo (VARCHAR 255, NOT NULL)
+- ruta_archivo (VARCHAR 500, NOT NULL)
+- tipo (VARCHAR 50, NULLABLE)
+- subido_por (INT, NULLABLE, FK → usuarios.id)
+- subido_en (TIMESTAMP, DEFAULT: CURRENT_TIMESTAMP)
+
+Relaciones: N-a-1 con pacientes
+
+### Tabla: AUDITORIA
+(Existe pero no se usa actualmente)
+
+---
+
+## 2. ARQUITECTURA JAVA
+
+### Paquetes:
+- conexion/ → Gestión de conexión a BD
+- modelos/ → Clases de entidades (Paciente, Usuario, Sesion, Turno, HistoriaPsicologica)
+- dao/ → Acceso a datos (PacienteDAO, UsuarioDAO, SesionDAO, TurnoDAO, HistoriaPsicologicaDAO)
+- util/ → Utilidades (Sesion, GeneradorReportes)
+- Vista/ → Interfaces gráficas
+
+### Clases Existentes:
+
+**conexion/**
+- Conexion.java → ÚNICA conexión a MySQL
+
+**modelos/**
+- Usuario.java
+- Paciente.java
+- Sesion.java
+- Turno.java
+- HistoriaPsicologica.java
+
+**dao/**
+- UsuarioDAO.java
+- PacienteDAO.java
+- SesionDAO.java
+- TurnoDAO.java
+- HistoriaPsicologicaDAO.java
+
+**util/**
+- Sesion.java → Manejo de sesión del usuario actual
+- GeneradorReportes.java → Exportación de reportes
+
+**Vista/**
+- Login.java
+- MenuPrincipal.java
+- Dashboard.java
+- GestionPacientes.java
+- GestionTurnos.java
+- HistoriaPsicologicaView.java
+- Agenda.java (existente, no modificada)
+- RegistroPaciente.java (existente, no modificada)
+- Sesiones.java (existente, no modificada)
+- Password.html.java (existente, no modificada)
+- Auditoria.java (existente, no modificada)
+
+---
+
+## 3. PROBLEMAS IDENTIFICADOS
+
+### CRÍTICOS:
+1. ❌ GestionTurnos usa Turno con fecha + hora separadas, pero BD tiene fecha_hora
+2. ❌ Algunos DAOs usan columnas que no existen en BD
+3. ❌ No hay validaciones de duplicados (email, usuario, turnos solapados)
+4. ❌ No hay integridad referencial completa (pueden existir turnos sin paciente)
+5. ❌ No hay control de permisos en vistas (cualquier rol puede acceder a todo)
+
+### MODERADOS:
+6. ⚠️ Contraseñas en código hardcodeado (admin123, psico123)
+7. ⚠️ No hay auditoría de cambios
+8. ⚠️ Mensajes de error no localizados
+
+---
+
+## 4. PLAN DE CORRECCIÓN
+
+PASO 1: Corregir inconsistencias BD vs Código Java
+PASO 2: Agregar validaciones
+PASO 3: Implementar control de permisos
+PASO 4: Crear lista de PRUEBAS UNITARIAS
+PASO 5: Pruebas de integración
+PASO 6: Documentar el sistema
+
+---
+
+FIRMA: Auditoría completada el [FECHA]
+Estado: REQUIERE CORRECCIONES
+Prioridad: CRÍTICA
