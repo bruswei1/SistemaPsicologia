@@ -429,8 +429,25 @@ public class Sesiones extends JPanel {
                 }
             }
 
-            JOptionPane.showMessageDialog(this, esEdicion ? "Sesión actualizada" : "Sesión registrada");
+            // Si la nota queda vinculada a un turno que todavía estaba "programado", asumimos que
+            // la sesión se llevó a cabo y lo pasamos a "completado" (no pisa cancelado/ausente,
+            // por si se marcó así a propósito).
+            boolean turnoCompletado = false;
+            if (turnoId != null) {
+                try (PreparedStatement psTurno = cn.prepareStatement(
+                        "UPDATE turnos SET estado='completado' WHERE id=? AND estado='programado'")) {
+                    psTurno.setInt(1, turnoId);
+                    turnoCompletado = psTurno.executeUpdate() > 0;
+                }
+                if (turnoCompletado) {
+                    Auditoria.registrar(cn, "COMPLETAR_TURNO", "turnos", turnoId, "Completado automáticamente al guardar la sesión");
+                }
+            }
+
+            JOptionPane.showMessageDialog(this, (esEdicion ? "Sesión actualizada" : "Sesión registrada")
+                + (turnoCompletado ? "\nEl turno asociado se marcó como completado." : ""));
             limpiarFormularioSesion();
+            cargarTurnosDelPaciente();
             cargarSesiones();
 
         } catch (Exception e) {
