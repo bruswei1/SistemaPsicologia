@@ -46,6 +46,10 @@ public class Configuracion extends javax.swing.JPanel {
     private JTable tablaAuditoria;
     private DefaultTableModel modeloAuditoria;
     private JTextField txtFiltroAuditoria;
+    private JSpinner spinnerDesde;
+    private JSpinner spinnerHasta;
+    private JLabel lblCantidadAuditoria;
+    private int limiteAuditoria = 200;
 
     private JButton btnModoOscuro;
 
@@ -239,13 +243,28 @@ public class Configuracion extends javax.swing.JPanel {
 
         JPanel panelFiltro = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
         panelFiltro.setBackground(Tema.SUPERFICIE);
-        panelFiltro.add(new JLabel("Filtrar por usuario/acción/entidad:"));
-        txtFiltroAuditoria = new JTextField(20);
+        panelFiltro.add(new JLabel("Texto (usuario/acción/entidad):"));
+        txtFiltroAuditoria = new JTextField(16);
         txtFiltroAuditoria.setBorder(Tema.bordeCampo());
         txtFiltroAuditoria.addActionListener(e -> cargarAuditoria());
         panelFiltro.add(txtFiltroAuditoria);
+
+        panelFiltro.add(new JLabel("Desde:"));
+        spinnerDesde = new JSpinner(new SpinnerDateModel());
+        spinnerDesde.setEditor(new JSpinner.DateEditor(spinnerDesde, "dd/MM/yyyy"));
+        spinnerDesde.setValue(java.sql.Date.valueOf(java.time.LocalDate.now().minusMonths(1)));
+        panelFiltro.add(spinnerDesde);
+
+        panelFiltro.add(new JLabel("Hasta:"));
+        spinnerHasta = new JSpinner(new SpinnerDateModel());
+        spinnerHasta.setEditor(new JSpinner.DateEditor(spinnerHasta, "dd/MM/yyyy"));
+        panelFiltro.add(spinnerHasta);
+
         JButton btnRefrescar = Tema.botonSecundario("Actualizar", Icono.LIMPIAR);
-        btnRefrescar.addActionListener(e -> cargarAuditoria());
+        btnRefrescar.addActionListener(e -> {
+            limiteAuditoria = 200;
+            cargarAuditoria();
+        });
         panelFiltro.add(btnRefrescar);
         panel.add(panelFiltro, BorderLayout.NORTH);
 
@@ -260,6 +279,23 @@ public class Configuracion extends javax.swing.JPanel {
         Tema.estilizarTabla(tablaAuditoria);
         tablaAuditoria.setPreferredScrollableViewportSize(new Dimension(0, 200));
         panel.add(new JScrollPane(tablaAuditoria), BorderLayout.CENTER);
+
+        JPanel panelPie = new JPanel(new BorderLayout());
+        panelPie.setBackground(Tema.SUPERFICIE);
+        lblCantidadAuditoria = new JLabel();
+        lblCantidadAuditoria.setFont(Tema.TEXTO_ITALICA_CHICA);
+        lblCantidadAuditoria.setForeground(Tema.TEXTO_SECUNDARIO);
+        panelPie.add(lblCantidadAuditoria, BorderLayout.WEST);
+        JButton btnCargarMas = Tema.botonSecundario("Cargar más antiguos");
+        btnCargarMas.addActionListener(e -> {
+            limiteAuditoria += 200;
+            cargarAuditoria();
+        });
+        JPanel wrapperBtnMas = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        wrapperBtnMas.setBackground(Tema.SUPERFICIE);
+        wrapperBtnMas.add(btnCargarMas);
+        panelPie.add(wrapperBtnMas, BorderLayout.EAST);
+        panel.add(panelPie, BorderLayout.SOUTH);
 
         cargarAuditoria();
 
@@ -478,9 +514,20 @@ public class Configuracion extends javax.swing.JPanel {
         String filtro = txtFiltroAuditoria != null ? txtFiltroAuditoria.getText().trim().toLowerCase() : "";
         DateTimeFormatter formato = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
+        java.time.LocalDate desde = ((java.util.Date) spinnerDesde.getValue()).toInstant()
+            .atZone(java.time.ZoneId.systemDefault()).toLocalDate();
+        java.time.LocalDate hasta = ((java.util.Date) spinnerHasta.getValue()).toInstant()
+            .atZone(java.time.ZoneId.systemDefault()).toLocalDate();
+
         Tema.conCursorEspera(this, () -> {
-            List<AuditoriaDAO.Registro> registros = auditoriaDAO.obtenerRecientes(200);
+            List<AuditoriaDAO.Registro> registros = auditoriaDAO.obtenerRecientes(limiteAuditoria);
+            int mostrados = 0;
             for (AuditoriaDAO.Registro r : registros) {
+                java.time.LocalDate fechaRegistro = r.fecha.toLocalDate();
+                if (fechaRegistro.isBefore(desde) || fechaRegistro.isAfter(hasta)) {
+                    continue;
+                }
+
                 boolean coincide = filtro.isEmpty()
                     || (r.usuarioNombre != null && r.usuarioNombre.toLowerCase().contains(filtro))
                     || (r.accion != null && r.accion.toLowerCase().contains(filtro))
@@ -492,8 +539,11 @@ public class Configuracion extends javax.swing.JPanel {
                         r.entidadId != null ? r.entidadId : "",
                         r.detalle != null ? r.detalle : ""
                     });
+                    mostrados++;
                 }
             }
+            lblCantidadAuditoria.setText(mostrados + " de " + registros.size() + " registros consultados"
+                + (registros.size() >= limiteAuditoria ? " (puede haber más antiguos, usá \"Cargar más antiguos\")" : ""));
         });
     }
 
