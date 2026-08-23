@@ -2,7 +2,6 @@ package Vista;
 
 import conexion.Conexion;
 import java.awt.BorderLayout;
-import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -31,6 +30,7 @@ public class Login extends javax.swing.JFrame {
         setTitle("Iniciar sesión — Sistema de Psicología");
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setResizable(false);
+        setIconImage(Tema.iconoApp());
         initComponents();
 
         getRootPane().setDefaultButton(btnLogin);
@@ -41,18 +41,21 @@ public class Login extends javax.swing.JFrame {
     private void initComponents() {
 
         JLabel lblTitulo = new JLabel("Sistema de Psicología", SwingConstants.CENTER);
-        lblTitulo.setFont(lblTitulo.getFont().deriveFont(Font.BOLD, 22f));
+        lblTitulo.setFont(Tema.TITULO);
+        lblTitulo.setForeground(Tema.TEXTO_PRIMARIO);
 
         JLabel lblSubtitulo = new JLabel("Iniciar sesión", SwingConstants.CENTER);
-        lblSubtitulo.setFont(lblSubtitulo.getFont().deriveFont(Font.PLAIN, 13f));
-        lblSubtitulo.setForeground(java.awt.Color.GRAY);
+        lblSubtitulo.setFont(Tema.TEXTO);
+        lblSubtitulo.setForeground(Tema.TEXTO_SECUNDARIO);
 
         JPanel panelTitulo = new JPanel(new java.awt.GridLayout(2, 1, 0, 4));
+        panelTitulo.setBackground(Tema.SUPERFICIE);
         panelTitulo.add(lblTitulo);
         panelTitulo.add(lblSubtitulo);
         panelTitulo.setBorder(BorderFactory.createEmptyBorder(0, 0, 20, 0));
 
         JPanel panelForm = new JPanel(new GridBagLayout());
+        panelForm.setBackground(Tema.SUPERFICIE);
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(6, 6, 6, 6);
         gbc.fill = GridBagConstraints.HORIZONTAL;
@@ -82,7 +85,7 @@ public class Login extends javax.swing.JFrame {
         gbc.anchor = GridBagConstraints.WEST;
         panelForm.add(txtPassword, gbc);
 
-        btnLogin = new JButton("Iniciar sesión");
+        btnLogin = Tema.botonPrimario("Iniciar sesión");
         btnLogin.addActionListener(evt -> autenticar());
         txtPassword.addActionListener(evt -> autenticar());
 
@@ -95,6 +98,7 @@ public class Login extends javax.swing.JFrame {
         panelForm.add(btnLogin, gbc);
 
         JPanel panelContenido = new JPanel(new BorderLayout());
+        panelContenido.setBackground(Tema.SUPERFICIE);
         panelContenido.setBorder(BorderFactory.createEmptyBorder(36, 44, 36, 44));
         panelContenido.add(panelTitulo, BorderLayout.NORTH);
         panelContenido.add(panelForm, BorderLayout.CENTER);

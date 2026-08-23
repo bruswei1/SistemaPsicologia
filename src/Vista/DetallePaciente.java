@@ -31,6 +31,7 @@ public class DetallePaciente extends javax.swing.JFrame {
         
         initComponents();
         cargarDatos();
+        setIconImage(Tema.iconoApp());
         setLocationRelativeTo(null);
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
     }
@@ -40,44 +41,38 @@ public class DetallePaciente extends javax.swing.JFrame {
         setTitle("Detalle del Paciente - Sistema de Psicología");
 
         JPanel mainPanel = new JPanel();
-        mainPanel.setBackground(new Color(248, 249, 250));
+        mainPanel.setBackground(Tema.FONDO);
         mainPanel.setLayout(new BorderLayout(10, 10));
         mainPanel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
 
         // Tabs
         JTabbedPane tabbedPane = new JTabbedPane();
-        tabbedPane.setBackground(new Color(255, 255, 255));
-        tabbedPane.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        tabbedPane.setBackground(Tema.SUPERFICIE);
+        tabbedPane.setFont(Tema.TEXTO_CHICO);
 
         // Tab 1: Información Personal
-        tabbedPane.addTab("👤 Información Personal", crearPanelPersonal());
+        tabbedPane.addTab("Información Personal", new IconoSwing(Icono.PACIENTES, Tema.PRIMARIO, 16), crearPanelPersonal());
 
         // Tab 2: Información Clínica
-        tabbedPane.addTab("📋 Información Clínica", crearPanelClinica());
+        tabbedPane.addTab("Información Clínica", new IconoSwing(Icono.HISTORIA, Tema.PRIMARIO, 16), crearPanelClinica());
 
         // Tab 3: Sesiones
-        tabbedPane.addTab("📝 Sesiones", crearPanelSesiones());
+        tabbedPane.addTab("Sesiones", new IconoSwing(Icono.SESIONES, Tema.PRIMARIO, 16), crearPanelSesiones());
 
         mainPanel.add(tabbedPane, BorderLayout.CENTER);
 
         // Footer
         JPanel footerPanel = new JPanel();
-        footerPanel.setBackground(new Color(255, 255, 255));
+        footerPanel.setBackground(Tema.SUPERFICIE);
         footerPanel.setLayout(new FlowLayout(FlowLayout.RIGHT, 20, 10));
 
-        JButton btnEditar = new JButton("✏️ Editar");
-        btnEditar.setBackground(new Color(79, 129, 245));
-        btnEditar.setForeground(Color.WHITE);
-        btnEditar.setFocusPainted(false);
+        JButton btnEditar = Tema.botonPrimario("Editar", Icono.EDITAR);
         btnEditar.addActionListener(e -> {
             JOptionPane.showMessageDialog(this, "Funcionalidad en desarrollo", "Info", JOptionPane.INFORMATION_MESSAGE);
         });
         footerPanel.add(btnEditar);
 
-        JButton btnCerrar = new JButton("← Cerrar");
-        btnCerrar.setBackground(new Color(200, 200, 200));
-        btnCerrar.setForeground(Color.BLACK);
-        btnCerrar.setFocusPainted(false);
+        JButton btnCerrar = Tema.botonSecundario("Cerrar", Icono.VOLVER);
         btnCerrar.addActionListener(e -> this.dispose());
         footerPanel.add(btnCerrar);
 
@@ -88,12 +83,12 @@ public class DetallePaciente extends javax.swing.JFrame {
 
     private JPanel crearPanelPersonal() {
         JPanel panel = new JPanel();
-        panel.setBackground(new Color(248, 249, 250));
+        panel.setBackground(Tema.FONDO);
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
         panel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
 
         // Sección: Datos Básicos
-        panel.add(crearSeccion("📌 DATOS BÁSICOS", 
+        panel.add(crearSeccion("DATOS BÁSICOS", 
             new String[]{"Nombre Completo", "Email", "Teléfono", "Género", "Fecha Nacimiento", "Dirección"},
             new String[]{
                 pacienteActual != null ? pacienteActual.getNombre() + " " + pacienteActual.getApellido() : "N/A",
@@ -109,7 +104,7 @@ public class DetallePaciente extends javax.swing.JFrame {
         panel.add(Box.createVerticalStrut(20));
 
         // Sección: Motivo de Consulta
-        panel.add(crearSeccionTexto("🔍 MOTIVO DE CONSULTA", 
+        panel.add(crearSeccionTexto("MOTIVO DE CONSULTA", 
             pacienteActual != null && pacienteActual.getMotivoConsulta() != null ? 
                 pacienteActual.getMotivoConsulta() : "No especificado"));
 
@@ -117,19 +112,19 @@ public class DetallePaciente extends javax.swing.JFrame {
 
         // Sección: Antecedentes
         if (pacienteActual != null) {
-            panel.add(crearSeccionTexto("📚 ANTECEDENTES PERSONALES", 
+            panel.add(crearSeccionTexto("ANTECEDENTES PERSONALES", 
                 pacienteActual.getAntecedentesPersonales() != null ? 
                     pacienteActual.getAntecedentesPersonales() : "No especificado"));
 
             panel.add(Box.createVerticalStrut(10));
 
-            panel.add(crearSeccionTexto("👨‍👩‍👧 ANTECEDENTES FAMILIARES", 
+            panel.add(crearSeccionTexto("ANTECEDENTES FAMILIARES", 
                 pacienteActual.getAntecedenteFamiliares() != null ? 
                     pacienteActual.getAntecedenteFamiliares() : "No especificado"));
 
             panel.add(Box.createVerticalStrut(10));
 
-            panel.add(crearSeccionTexto("📄 ANAMNESIS", 
+            panel.add(crearSeccionTexto("ANAMNESIS", 
                 pacienteActual.getAnamnesis() != null ? 
                     pacienteActual.getAnamnesis() : "No especificada"));
         }
@@ -137,7 +132,7 @@ public class DetallePaciente extends javax.swing.JFrame {
         panel.add(Box.createVerticalGlue());
         
         JScrollPane scrollPane = new JScrollPane(panel);
-        scrollPane.setBackground(new Color(248, 249, 250));
+        scrollPane.setBackground(Tema.FONDO);
         
         JPanel wrapper = new JPanel(new BorderLayout());
         wrapper.add(scrollPane, BorderLayout.CENTER);
@@ -146,30 +141,30 @@ public class DetallePaciente extends javax.swing.JFrame {
 
     private JPanel crearPanelClinica() {
         JPanel panel = new JPanel();
-        panel.setBackground(new Color(248, 249, 250));
+        panel.setBackground(Tema.FONDO);
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
         panel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
 
         if (historiaActual != null) {
-            panel.add(crearSeccionTexto("📋 MOTIVO DE CONSULTA", 
+            panel.add(crearSeccionTexto("MOTIVO DE CONSULTA", 
                 historiaActual.getMotivoConsulta() != null ? 
                     historiaActual.getMotivoConsulta() : "No especificado"));
 
             panel.add(Box.createVerticalStrut(20));
 
-            panel.add(crearSeccionTexto("📝 OBSERVACIONES GENERALES", 
+            panel.add(crearSeccionTexto("OBSERVACIONES GENERALES", 
                 historiaActual.getObservacionesGenerales() != null ? 
                     historiaActual.getObservacionesGenerales() : "No especificado"));
 
             panel.add(Box.createVerticalStrut(20));
 
-            panel.add(crearSeccionTexto("🔍 DIAGNÓSTICO", 
+            panel.add(crearSeccionTexto("DIAGNÓSTICO", 
                 historiaActual.getDiagnostico() != null ? 
                     historiaActual.getDiagnostico() : "No especificado"));
 
             panel.add(Box.createVerticalStrut(20));
 
-            panel.add(crearSeccionTexto("💊 TRATAMIENTO", 
+            panel.add(crearSeccionTexto("TRATAMIENTO", 
                 historiaActual.getTratamiento() != null ? 
                     historiaActual.getTratamiento() : "No especificado"));
 
@@ -179,21 +174,21 @@ public class DetallePaciente extends javax.swing.JFrame {
                 JLabel lblFecha = new JLabel("Última actualización: " + 
                     historiaActual.getUltimaActualizacion().format(
                         DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
-                lblFecha.setFont(new Font("Segoe UI", Font.ITALIC, 11));
-                lblFecha.setForeground(new Color(100, 100, 100));
+                lblFecha.setFont(Tema.TEXTO_ITALICA_CHICA);
+                lblFecha.setForeground(Tema.TEXTO_SECUNDARIO);
                 panel.add(lblFecha);
             }
         } else {
             JLabel lblNoData = new JLabel("No hay información clínica registrada para este paciente");
-            lblNoData.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-            lblNoData.setForeground(new Color(150, 150, 150));
+            lblNoData.setFont(Tema.TEXTO);
+            lblNoData.setForeground(Tema.TEXTO_SECUNDARIO);
             panel.add(lblNoData);
         }
 
         panel.add(Box.createVerticalGlue());
         
         JScrollPane scrollPane = new JScrollPane(panel);
-        scrollPane.setBackground(new Color(248, 249, 250));
+        scrollPane.setBackground(Tema.FONDO);
         
         JPanel wrapper = new JPanel(new BorderLayout());
         wrapper.add(scrollPane, BorderLayout.CENTER);
@@ -202,7 +197,7 @@ public class DetallePaciente extends javax.swing.JFrame {
 
     private JPanel crearPanelSesiones() {
         JPanel panel = new JPanel(new BorderLayout());
-        panel.setBackground(new Color(248, 249, 250));
+        panel.setBackground(Tema.FONDO);
         panel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
 
         String[] columnas = {"ID", "Fecha", "Psicólogo", "Duración", "Estado"};
@@ -214,10 +209,7 @@ public class DetallePaciente extends javax.swing.JFrame {
         };
 
         JTable tablaSesiones = new JTable(modeloTabla);
-        tablaSesiones.setBackground(new Color(255, 255, 255));
-        tablaSesiones.setFont(new Font("Segoe UI", Font.PLAIN, 11));
-        tablaSesiones.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 12));
-        tablaSesiones.setRowHeight(25);
+        Tema.estilizarTabla(tablaSesiones);
 
         if (pacienteActual != null) {
             List<Sesion> sesiones = sesionDAO.obtenerPorPaciente(pacienteActual.getId());
@@ -244,7 +236,7 @@ public class DetallePaciente extends javax.swing.JFrame {
 
     private JPanel crearSeccion(String titulo, String[] etiquetas, String[] valores) {
         JPanel panel = new JPanel();
-        panel.setBackground(new Color(255, 255, 255));
+        panel.setBackground(Tema.SUPERFICIE);
         panel.setLayout(new GridLayout(etiquetas.length, 2, 10, 10));
         panel.setBorder(BorderFactory.createCompoundBorder(
             BorderFactory.createTitledBorder(titulo),
@@ -253,12 +245,12 @@ public class DetallePaciente extends javax.swing.JFrame {
 
         for (int i = 0; i < etiquetas.length; i++) {
             JLabel lblEtiqueta = new JLabel(etiquetas[i] + ":");
-            lblEtiqueta.setFont(new Font("Segoe UI", Font.BOLD, 11));
-            lblEtiqueta.setForeground(new Color(79, 129, 245));
+            lblEtiqueta.setFont(Tema.BOTON);
+            lblEtiqueta.setForeground(Tema.PRIMARIO);
             panel.add(lblEtiqueta);
 
             JLabel lblValor = new JLabel(valores[i]);
-            lblValor.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+            lblValor.setFont(Tema.TEXTO_CHICO);
             panel.add(lblValor);
         }
 
@@ -267,7 +259,7 @@ public class DetallePaciente extends javax.swing.JFrame {
 
     private JPanel crearSeccionTexto(String titulo, String contenido) {
         JPanel panel = new JPanel(new BorderLayout());
-        panel.setBackground(new Color(255, 255, 255));
+        panel.setBackground(Tema.SUPERFICIE);
         panel.setBorder(BorderFactory.createCompoundBorder(
             BorderFactory.createTitledBorder(titulo),
             BorderFactory.createEmptyBorder(10, 10, 10, 10)
@@ -278,8 +270,8 @@ public class DetallePaciente extends javax.swing.JFrame {
         txtArea.setLineWrap(true);
         txtArea.setWrapStyleWord(true);
         txtArea.setEditable(false);
-        txtArea.setBackground(new Color(245, 245, 245));
-        txtArea.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        txtArea.setBackground(Tema.BORDE_SUAVE);
+        txtArea.setFont(Tema.TEXTO_CHICO);
 
         JScrollPane scrollPane = new JScrollPane(txtArea);
         panel.add(scrollPane, BorderLayout.CENTER);

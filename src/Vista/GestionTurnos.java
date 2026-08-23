@@ -24,9 +24,10 @@ public class GestionTurnos extends javax.swing.JFrame {
         this.turnoDAO = new TurnoDAO();
         this.pacienteDAO = new PacienteDAO();
         this.usuarioDAO = new UsuarioDAO();
-        
+
         initComponents();
         cargarDatos();
+        setIconImage(Tema.iconoApp());
         setLocationRelativeTo(null);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
     }
@@ -36,20 +37,19 @@ public class GestionTurnos extends javax.swing.JFrame {
         setTitle("Gestión de Turnos - Sistema de Psicología");
 
         JPanel mainPanel = new JPanel();
-        mainPanel.setBackground(new Color(248, 249, 250));
+        mainPanel.setBackground(Tema.FONDO);
         mainPanel.setLayout(new BorderLayout(10, 10));
         mainPanel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
 
         // Header
-        JLabel lblTitulo = new JLabel("📅 Gestión de Turnos");
-        lblTitulo.setFont(new Font("Segoe UI", Font.BOLD, 26));
-        lblTitulo.setForeground(new Color(33, 33, 33));
+        JLabel lblTitulo = new JLabel("Gestión de Turnos");
+        lblTitulo.setFont(Tema.SUBTITULO);
+        lblTitulo.setForeground(Tema.TEXTO_PRIMARIO);
         mainPanel.add(lblTitulo, BorderLayout.NORTH);
 
         // Panel de registro
         JPanel panelRegistro = new JPanel();
-        panelRegistro.setBackground(new Color(255, 255, 255));
-        panelRegistro.setBorder(BorderFactory.createTitledBorder("Nuevo Turno"));
+        panelRegistro.setBackground(Tema.SUPERFICIE);
         panelRegistro.setLayout(new GridLayout(2, 3, 10, 10));
         panelRegistro.setBorder(BorderFactory.createCompoundBorder(
             BorderFactory.createTitledBorder("Nuevo Turno"),
@@ -73,11 +73,7 @@ public class GestionTurnos extends javax.swing.JFrame {
         spinnerFechaHora.setEditor(editor);
         panelRegistro.add(spinnerFechaHora);
 
-        JButton btnGuardar = new JButton("➕ Guardar Turno");
-        btnGuardar.setBackground(new Color(76, 175, 80));
-        btnGuardar.setForeground(Color.WHITE);
-        btnGuardar.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        btnGuardar.setFocusPainted(false);
+        JButton btnGuardar = Tema.botonExito("Guardar Turno", Icono.GUARDAR);
         btnGuardar.addActionListener(e -> guardarTurno());
         panelRegistro.add(btnGuardar);
 
@@ -93,10 +89,8 @@ public class GestionTurnos extends javax.swing.JFrame {
         };
 
         tablaTurnos = new JTable(modeloTabla);
-        tablaTurnos.setBackground(new Color(255, 255, 255));
-        tablaTurnos.setFont(new Font("Segoe UI", Font.PLAIN, 11));
-        tablaTurnos.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 12));
-        tablaTurnos.setRowHeight(25);
+        Tema.estilizarTabla(tablaTurnos);
+        tablaTurnos.getColumnModel().getColumn(5).setCellRenderer(Tema.rendererEstado());
 
         JScrollPane scrollPane = new JScrollPane(tablaTurnos);
         scrollPane.setBorder(BorderFactory.createTitledBorder("Turnos Registrados"));
@@ -104,20 +98,14 @@ public class GestionTurnos extends javax.swing.JFrame {
 
         // Footer
         JPanel footerPanel = new JPanel();
-        footerPanel.setBackground(new Color(255, 255, 255));
+        footerPanel.setBackground(Tema.SUPERFICIE);
         footerPanel.setLayout(new FlowLayout(FlowLayout.RIGHT, 20, 10));
 
-        JButton btnEliminar = new JButton("🗑️ Eliminar");
-        btnEliminar.setBackground(new Color(244, 67, 54));
-        btnEliminar.setForeground(Color.WHITE);
-        btnEliminar.setFocusPainted(false);
+        JButton btnEliminar = Tema.botonPeligro("Eliminar", Icono.ELIMINAR);
         btnEliminar.addActionListener(e -> eliminarTurno());
         footerPanel.add(btnEliminar);
 
-        JButton btnVolver = new JButton("← Volver");
-        btnVolver.setBackground(new Color(200, 200, 200));
-        btnVolver.setForeground(Color.BLACK);
-        btnVolver.setFocusPainted(false);
+        JButton btnVolver = Tema.botonSecundario("Volver", Icono.VOLVER);
         btnVolver.addActionListener(e -> {
             this.dispose();
             MenuPrincipal menu = new MenuPrincipal();
@@ -157,11 +145,11 @@ public class GestionTurnos extends javax.swing.JFrame {
         try {
             List<Turno> turnos = turnoDAO.obtenerTodosPendientes();
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
-            
+
             for (Turno t : turnos) {
                 Paciente p = pacienteDAO.obtenerPorId(t.getPacienteId());
                 Usuario u = usuarioDAO.obtenerPorId(t.getPsicologoId());
-                
+
                 modeloTabla.addRow(new Object[]{
                     t.getId(),
                     p != null ? p.getNombre() : "N/A",

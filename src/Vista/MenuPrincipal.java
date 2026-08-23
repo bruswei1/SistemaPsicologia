@@ -18,6 +18,7 @@ public class MenuPrincipal extends javax.swing.JFrame {
         }
 
         setTitle("Sistema de Psicología — " + usuario + " (" + rol + ")");
+        setIconImage(Tema.iconoApp());
         setLocationRelativeTo(null);
         setResizable(false);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
@@ -37,17 +38,20 @@ public class MenuPrincipal extends javax.swing.JFrame {
     }
 
     private JPanel crearHeader() {
-        JPanel panelHeader = new JPanel();
+        JPanel panelHeader = new JPanel(new BorderLayout());
         panelHeader.setBackground(Tema.SUPERFICIE);
         panelHeader.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Tema.BORDE_SUAVE));
         panelHeader.setPreferredSize(new Dimension(0, 100));
-        panelHeader.setLayout(new BoxLayout(panelHeader, BoxLayout.Y_AXIS));
+
+        JPanel panelTextos = new JPanel();
+        panelTextos.setOpaque(false);
+        panelTextos.setLayout(new BoxLayout(panelTextos, BoxLayout.Y_AXIS));
 
         JLabel lblTitulo = new JLabel("Sistema de Psicología");
         lblTitulo.setFont(Tema.TITULO);
         lblTitulo.setForeground(Tema.TEXTO_PRIMARIO);
         lblTitulo.setBorder(BorderFactory.createEmptyBorder(15, 20, 5, 0));
-        panelHeader.add(lblTitulo);
+        panelTextos.add(lblTitulo);
 
         String usuarioInfo = "Usuario";
         String rolInfo = "Admin";
@@ -62,7 +66,19 @@ public class MenuPrincipal extends javax.swing.JFrame {
         lblUsuario.setFont(Tema.TEXTO_CHICO);
         lblUsuario.setForeground(Tema.TEXTO_SECUNDARIO);
         lblUsuario.setBorder(BorderFactory.createEmptyBorder(0, 20, 15, 0));
-        panelHeader.add(lblUsuario);
+        panelTextos.add(lblUsuario);
+
+        panelHeader.add(panelTextos, BorderLayout.WEST);
+
+        JPanel panelAcciones = new JPanel();
+        panelAcciones.setOpaque(false);
+        JButton btnModoOscuro = Tema.botonSecundario(Tema.esOscuro() ? "Modo claro" : "Modo oscuro");
+        btnModoOscuro.addActionListener(e -> {
+            Tema.alternarModoOscuro();
+            abrirPantalla(new MenuPrincipal());
+        });
+        panelAcciones.add(btnModoOscuro);
+        panelHeader.add(panelAcciones, BorderLayout.EAST);
 
         return panelHeader;
     }

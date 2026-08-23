@@ -24,6 +24,7 @@ public class HistoriaPsicologicaView extends javax.swing.JFrame {
         
         initComponents();
         cargarPacientes();
+        setIconImage(Tema.iconoApp());
         setLocationRelativeTo(null);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
     }
@@ -33,40 +34,40 @@ public class HistoriaPsicologicaView extends javax.swing.JFrame {
         setTitle("Historia Psicológica - Sistema de Psicología");
 
         JPanel mainPanel = new JPanel();
-        mainPanel.setBackground(new Color(248, 249, 250));
+        mainPanel.setBackground(Tema.FONDO);
         mainPanel.setLayout(new BorderLayout(10, 10));
         mainPanel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
 
         // Header
-        JLabel lblTitulo = new JLabel("📋 Historia Psicológica");
-        lblTitulo.setFont(new Font("Segoe UI", Font.BOLD, 26));
-        lblTitulo.setForeground(new Color(33, 33, 33));
-        
+        JLabel lblTitulo = new JLabel("Historia Psicológica");
+        lblTitulo.setFont(Tema.SUBTITULO);
+        lblTitulo.setForeground(Tema.TEXTO_PRIMARIO);
+
         JPanel headerPanel = new JPanel(new BorderLayout());
-        headerPanel.setBackground(new Color(255, 255, 255));
+        headerPanel.setBackground(Tema.SUPERFICIE);
         headerPanel.add(lblTitulo, BorderLayout.WEST);
-        
+
         JLabel lblSelectPaciente = new JLabel("Seleccionar Paciente:");
         comboPaciente = new JComboBox<>();
         comboPaciente.addActionListener(e -> cargarHistoria());
-        
+
         JPanel selectorPanel = new JPanel();
-        selectorPanel.setBackground(new Color(255, 255, 255));
+        selectorPanel.setBackground(Tema.SUPERFICIE);
         selectorPanel.add(lblSelectPaciente);
         selectorPanel.add(comboPaciente);
         headerPanel.add(selectorPanel, BorderLayout.EAST);
-        
+
         mainPanel.add(headerPanel, BorderLayout.NORTH);
 
         // Panel de contenido con tabs
         JTabbedPane tabbedPane = new JTabbedPane();
-        tabbedPane.setBackground(new Color(255, 255, 255));
-        tabbedPane.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        tabbedPane.setBackground(Tema.SUPERFICIE);
+        tabbedPane.setFont(Tema.TEXTO_CHICO);
 
         // Tab 1: Información General
         JPanel panelGeneral = new JPanel(new GridLayout(3, 2, 10, 10));
         panelGeneral.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
-        panelGeneral.setBackground(new Color(248, 249, 250));
+        panelGeneral.setBackground(Tema.FONDO);
 
         panelGeneral.add(new JLabel("Antecedentes:"));
         txtAntecedentes = new JTextArea(5, 30);
@@ -91,7 +92,7 @@ public class HistoriaPsicologicaView extends javax.swing.JFrame {
         // Tab 2: Diagnóstico y Tratamiento
         JPanel panelDiagnostico = new JPanel(new GridLayout(2, 1, 10, 10));
         panelDiagnostico.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
-        panelDiagnostico.setBackground(new Color(248, 249, 250));
+        panelDiagnostico.setBackground(Tema.FONDO);
 
         panelDiagnostico.add(new JLabel("Diagnóstico:"));
         txtDiagnostico = new JTextArea(6, 40);
@@ -111,31 +112,22 @@ public class HistoriaPsicologicaView extends javax.swing.JFrame {
 
         // Footer
         JPanel footerPanel = new JPanel();
-        footerPanel.setBackground(new Color(255, 255, 255));
+        footerPanel.setBackground(Tema.SUPERFICIE);
         footerPanel.setLayout(new FlowLayout(FlowLayout.RIGHT, 20, 10));
 
         lblUltimaActualizacion = new JLabel("Última actualización: N/A");
-        lblUltimaActualizacion.setForeground(new Color(100, 100, 100));
+        lblUltimaActualizacion.setForeground(Tema.TEXTO_SECUNDARIO);
         footerPanel.add(lblUltimaActualizacion);
 
-        JButton btnGuardar = new JButton("💾 Guardar");
-        btnGuardar.setBackground(new Color(76, 175, 80));
-        btnGuardar.setForeground(Color.WHITE);
-        btnGuardar.setFocusPainted(false);
+        JButton btnGuardar = Tema.botonExito("Guardar", Icono.GUARDAR);
         btnGuardar.addActionListener(e -> guardarHistoria());
         footerPanel.add(btnGuardar);
-        
-        JButton btnExportar = new JButton("📄 Exportar Reporte");
-        btnExportar.setBackground(new Color(255, 152, 0));
-        btnExportar.setForeground(Color.WHITE);
-        btnExportar.setFocusPainted(false);
+
+        JButton btnExportar = Tema.botonPrimario("Exportar Reporte", Icono.EXPORTAR);
         btnExportar.addActionListener(e -> exportarReporte());
         footerPanel.add(btnExportar);
 
-        JButton btnVolver = new JButton("← Volver");
-        btnVolver.setBackground(new Color(200, 200, 200));
-        btnVolver.setForeground(Color.BLACK);
-        btnVolver.setFocusPainted(false);
+        JButton btnVolver = Tema.botonSecundario("Volver", Icono.VOLVER);
         btnVolver.addActionListener(e -> {
             this.dispose();
             MenuPrincipal menu = new MenuPrincipal();

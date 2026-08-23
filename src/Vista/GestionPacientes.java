@@ -7,7 +7,6 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.sql.Connection;
-import java.time.LocalDate;
 import java.util.List;
 
 public class GestionPacientes extends javax.swing.JFrame {
@@ -26,6 +25,7 @@ public class GestionPacientes extends javax.swing.JFrame {
         this.pacienteDAO = new PacienteDAO();
         initComponents();
         cargarPacientes();
+        setIconImage(Tema.iconoApp());
         setLocationRelativeTo(null);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
     }
@@ -35,19 +35,19 @@ public class GestionPacientes extends javax.swing.JFrame {
         setTitle("Gestión de Pacientes - Sistema de Psicología");
 
         JPanel mainPanel = new JPanel();
-        mainPanel.setBackground(new Color(248, 249, 250));
+        mainPanel.setBackground(Tema.FONDO);
         mainPanel.setLayout(new BorderLayout(10, 10));
         mainPanel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
 
         // Header
-        JLabel lblTitulo = new JLabel("👥 Gestión de Pacientes");
-        lblTitulo.setFont(new Font("Segoe UI", Font.BOLD, 26));
-        lblTitulo.setForeground(new Color(33, 33, 33));
+        JLabel lblTitulo = new JLabel("Gestión de Pacientes");
+        lblTitulo.setFont(Tema.SUBTITULO);
+        lblTitulo.setForeground(Tema.TEXTO_PRIMARIO);
         mainPanel.add(lblTitulo, BorderLayout.NORTH);
 
         // Panel de búsqueda
         JPanel panelBusqueda = new JPanel();
-        panelBusqueda.setBackground(new Color(255, 255, 255));
+        panelBusqueda.setBackground(Tema.SUPERFICIE);
         panelBusqueda.setBorder(BorderFactory.createCompoundBorder(
             BorderFactory.createTitledBorder("Buscar Paciente"),
             BorderFactory.createEmptyBorder(10, 10, 10, 10)
@@ -56,28 +56,23 @@ public class GestionPacientes extends javax.swing.JFrame {
 
         panelBusqueda.add(new JLabel("Buscar por nombre:"));
         txtBusqueda = new JTextField(20);
+        txtBusqueda.setBorder(Tema.bordeCampo());
         panelBusqueda.add(txtBusqueda);
 
-        JButton btnBuscar = new JButton("🔍 Buscar");
-        btnBuscar.setBackground(new Color(79, 129, 245));
-        btnBuscar.setForeground(Color.WHITE);
-        btnBuscar.setFocusPainted(false);
+        JButton btnBuscar = Tema.botonPrimario("Buscar", Icono.BUSCAR);
         btnBuscar.addActionListener(e -> buscarPacientes());
         panelBusqueda.add(btnBuscar);
 
-        JButton btnLimpiar = new JButton("🔄 Limpiar");
-        btnLimpiar.setBackground(new Color(200, 200, 200));
-        btnLimpiar.setForeground(Color.BLACK);
-        btnLimpiar.setFocusPainted(false);
+        JButton btnLimpiar = Tema.botonSecundario("Limpiar", Icono.LIMPIAR);
         btnLimpiar.addActionListener(e -> {
             txtBusqueda.setText("");
             cargarPacientes();
         });
         panelBusqueda.add(btnLimpiar);
-        
+
         JLabel lblHint = new JLabel("Doble clic en un paciente para ver detalles completos");
-        lblHint.setFont(new Font("Segoe UI", Font.ITALIC, 10));
-        lblHint.setForeground(new Color(100, 100, 100));
+        lblHint.setFont(Tema.TEXTO_ITALICA_CHICA);
+        lblHint.setForeground(Tema.TEXTO_SECUNDARIO);
         panelBusqueda.add(lblHint);
 
         mainPanel.add(panelBusqueda, BorderLayout.NORTH);
@@ -92,10 +87,7 @@ public class GestionPacientes extends javax.swing.JFrame {
         };
 
         tablaPacientes = new JTable(modeloTabla);
-        tablaPacientes.setBackground(new Color(255, 255, 255));
-        tablaPacientes.setFont(new Font("Segoe UI", Font.PLAIN, 11));
-        tablaPacientes.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 12));
-        tablaPacientes.setRowHeight(25);
+        Tema.estilizarTabla(tablaPacientes);
         tablaPacientes.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override
             public void mouseClicked(java.awt.event.MouseEvent evt) {
@@ -111,7 +103,7 @@ public class GestionPacientes extends javax.swing.JFrame {
 
         // Panel de registro
         JPanel panelRegistro = new JPanel();
-        panelRegistro.setBackground(new Color(255, 255, 255));
+        panelRegistro.setBackground(Tema.SUPERFICIE);
         panelRegistro.setBorder(BorderFactory.createCompoundBorder(
             BorderFactory.createTitledBorder("Nuevo Paciente"),
             BorderFactory.createEmptyBorder(10, 10, 10, 10)
@@ -120,50 +112,42 @@ public class GestionPacientes extends javax.swing.JFrame {
 
         panelRegistro.add(new JLabel("Nombre:"));
         txtNombre = new JTextField();
+        txtNombre.setBorder(Tema.bordeCampo());
         panelRegistro.add(txtNombre);
 
         panelRegistro.add(new JLabel("Apellido:"));
         txtApellido = new JTextField();
+        txtApellido.setBorder(Tema.bordeCampo());
         panelRegistro.add(txtApellido);
 
         panelRegistro.add(new JLabel("Email:"));
         txtEmail = new JTextField();
+        txtEmail.setBorder(Tema.bordeCampo());
         panelRegistro.add(txtEmail);
 
         panelRegistro.add(new JLabel("Teléfono:"));
         txtTelefono = new JTextField();
+        txtTelefono.setBorder(Tema.bordeCampo());
         panelRegistro.add(txtTelefono);
 
         panelRegistro.add(new JLabel("Fecha Nacimiento:"));
         spinnerFecha = new JSpinner(new javax.swing.SpinnerDateModel());
         panelRegistro.add(spinnerFecha);
 
-        JButton btnGuardar = new JButton("➕ Guardar");
-        btnGuardar.setBackground(new Color(76, 175, 80));
-        btnGuardar.setForeground(Color.WHITE);
-        btnGuardar.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        btnGuardar.setFocusPainted(false);
+        JButton btnGuardar = Tema.botonExito("Guardar", Icono.GUARDAR);
         btnGuardar.addActionListener(e -> guardarPaciente());
         panelRegistro.add(btnGuardar);
 
-        mainPanel.add(panelRegistro, BorderLayout.SOUTH);
-
         // Footer
         JPanel footerPanel = new JPanel();
-        footerPanel.setBackground(new Color(255, 255, 255));
+        footerPanel.setBackground(Tema.SUPERFICIE);
         footerPanel.setLayout(new FlowLayout(FlowLayout.RIGHT, 20, 10));
 
-        JButton btnEliminar = new JButton("🗑️ Eliminar");
-        btnEliminar.setBackground(new Color(244, 67, 54));
-        btnEliminar.setForeground(Color.WHITE);
-        btnEliminar.setFocusPainted(false);
+        JButton btnEliminar = Tema.botonPeligro("Eliminar", Icono.ELIMINAR);
         btnEliminar.addActionListener(e -> eliminarPaciente());
         footerPanel.add(btnEliminar);
 
-        JButton btnVolver = new JButton("← Volver");
-        btnVolver.setBackground(new Color(200, 200, 200));
-        btnVolver.setForeground(Color.BLACK);
-        btnVolver.setFocusPainted(false);
+        JButton btnVolver = Tema.botonSecundario("Volver", Icono.VOLVER);
         btnVolver.addActionListener(e -> {
             this.dispose();
             MenuPrincipal menu = new MenuPrincipal();
@@ -171,7 +155,10 @@ public class GestionPacientes extends javax.swing.JFrame {
         });
         footerPanel.add(btnVolver);
 
-        mainPanel.add(footerPanel, BorderLayout.SOUTH);
+        JPanel panelSur = new JPanel(new BorderLayout());
+        panelSur.add(panelRegistro, BorderLayout.CENTER);
+        panelSur.add(footerPanel, BorderLayout.SOUTH);
+        mainPanel.add(panelSur, BorderLayout.SOUTH);
 
         getContentPane().add(mainPanel);
     }
@@ -230,6 +217,9 @@ public class GestionPacientes extends javax.swing.JFrame {
         String email = txtEmail.getText().trim();
         String telefono = txtTelefono.getText().trim();
 
+        Tema.marcarError(txtNombre, !nombre.isEmpty());
+        Tema.marcarError(txtApellido, !apellido.isEmpty());
+
         if (nombre.isEmpty() || apellido.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Complete nombre y apellido", "Error", JOptionPane.ERROR_MESSAGE);
             return;
@@ -266,7 +256,7 @@ public class GestionPacientes extends javax.swing.JFrame {
 
         int id = (int) modeloTabla.getValueAt(fila, 0);
         int opcion = JOptionPane.showConfirmDialog(this, "¿Desea eliminar este paciente?", "Confirmación", JOptionPane.YES_NO_OPTION);
-        
+
         if (opcion == JOptionPane.YES_OPTION) {
             if (pacienteDAO.eliminar(id)) {
                 try (Connection cn = new conexion.Conexion().conectar()) {
@@ -303,6 +293,8 @@ public class GestionPacientes extends javax.swing.JFrame {
         txtApellido.setText("");
         txtEmail.setText("");
         txtTelefono.setText("");
+        Tema.marcarError(txtNombre, true);
+        Tema.marcarError(txtApellido, true);
     }
 
     public static void main(String[] args) {

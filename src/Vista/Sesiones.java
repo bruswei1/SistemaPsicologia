@@ -2,6 +2,7 @@ package Vista;
 
 import conexion.Conexion;
 import java.awt.BorderLayout;
+import java.awt.Font;
 import java.awt.GridLayout;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -47,6 +48,7 @@ public class Sesiones extends JFrame {
     public Sesiones() {
         setTitle("Notas de Sesión (SOAP)");
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        setIconImage(Tema.iconoApp());
         initComponents();
         cargarPacientes();
         setSize(820, 640);
@@ -62,14 +64,16 @@ public class Sesiones extends JFrame {
         });
 
         lblCronometro = new JLabel("00:00");
-        lblCronometro.setFont(lblCronometro.getFont().deriveFont(18f));
-        btnIniciar = new JButton("Iniciar sesión");
-        btnDetener = new JButton("Detener");
+        lblCronometro.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        lblCronometro.setForeground(Tema.PRIMARIO);
+        btnIniciar = Tema.botonExito("Iniciar sesión");
+        btnDetener = Tema.botonPeligro("Detener");
         btnDetener.setEnabled(false);
         btnIniciar.addActionListener(evt -> iniciarCronometro());
         btnDetener.addActionListener(evt -> detenerCronometro());
 
         JPanel panelCronometro = new JPanel();
+        panelCronometro.setBackground(Tema.SUPERFICIE);
         panelCronometro.add(new JLabel("Cronómetro:"));
         panelCronometro.add(lblCronometro);
         panelCronometro.add(btnIniciar);
@@ -94,21 +98,23 @@ public class Sesiones extends JFrame {
 
         JPanel panelPrivado = campoSoap("Notas privadas (no forman parte del informe)", txtNotasPrivadas);
 
-        JButton btnGuardar = new JButton("Guardar sesión");
+        JButton btnGuardar = Tema.botonExito("Guardar sesión", Icono.GUARDAR);
         btnGuardar.addActionListener(evt -> guardarSesion());
 
-        JButton btnNueva = new JButton("Nueva sesión");
+        JButton btnNueva = Tema.botonPrimario("Nueva sesión", Icono.NUEVO);
         btnNueva.addActionListener(evt -> limpiarFormularioSesion());
 
-        JButton btnVolver = new JButton("Volver al menú");
+        JButton btnVolver = Tema.botonSecundario("Volver al menú", Icono.VOLVER);
         btnVolver.addActionListener(evt -> volverAlMenu());
 
         JPanel panelBotones = new JPanel();
+        panelBotones.setBackground(Tema.SUPERFICIE);
         panelBotones.add(btnGuardar);
         panelBotones.add(btnNueva);
         panelBotones.add(btnVolver);
 
         JPanel panelFormulario = new JPanel(new BorderLayout(6, 6));
+        panelFormulario.setBackground(Tema.SUPERFICIE);
         panelFormulario.add(panelPaciente, BorderLayout.NORTH);
         panelFormulario.add(panelSoap, BorderLayout.CENTER);
         panelFormulario.add(panelPrivado, BorderLayout.SOUTH);
@@ -120,6 +126,7 @@ public class Sesiones extends JFrame {
             }
         };
         tablaSesiones = new JTable(modeloTabla);
+        Tema.estilizarTabla(tablaSesiones);
         tablaSesiones.getSelectionModel().addListSelectionListener(this::onSeleccionarSesion);
         JScrollPane scrollTabla = new JScrollPane(tablaSesiones);
         scrollTabla.setBorder(javax.swing.BorderFactory.createTitledBorder("Sesiones registradas"));

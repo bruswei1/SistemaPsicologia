@@ -47,6 +47,7 @@ public class Agenda extends JFrame {
     public Agenda() {
         setTitle("Agenda de Turnos");
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        setIconImage(Tema.iconoApp());
         initComponents();
         cargarPacientes();
         cargarPsicologos();
@@ -58,6 +59,8 @@ public class Agenda extends JFrame {
     private void initComponents() {
 
         JPanel panelForm = new JPanel(new GridBagLayout());
+        panelForm.setBackground(Tema.SUPERFICIE);
+        panelForm.setBorder(javax.swing.BorderFactory.createEmptyBorder(15, 15, 10, 15));
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(4, 4, 4, 4);
         gbc.fill = GridBagConstraints.HORIZONTAL;
@@ -78,16 +81,17 @@ public class Agenda extends JFrame {
         agregarCampo(panelForm, gbc, fila++, "Estado", cmbEstado);
         agregarCampo(panelForm, gbc, fila++, "Notas", txtNotas);
 
-        JButton btnGuardar = new JButton("Guardar");
+        JButton btnGuardar = Tema.botonExito("Guardar", Icono.GUARDAR);
         btnGuardar.addActionListener(evt -> guardarTurno());
 
-        JButton btnNuevo = new JButton("Nuevo turno");
+        JButton btnNuevo = Tema.botonPrimario("Nuevo turno", Icono.NUEVO);
         btnNuevo.addActionListener(evt -> limpiarCampos());
 
-        JButton btnVolver = new JButton("Volver al menú");
+        JButton btnVolver = Tema.botonSecundario("Volver al menú", Icono.VOLVER);
         btnVolver.addActionListener(evt -> volverAlMenu());
 
         JPanel panelBotones = new JPanel();
+        panelBotones.setBackground(Tema.SUPERFICIE);
         panelBotones.add(btnGuardar);
         panelBotones.add(btnNuevo);
         panelBotones.add(btnVolver);
@@ -101,12 +105,15 @@ public class Agenda extends JFrame {
             }
         };
         tablaTurnos = new JTable(modeloTabla);
+        Tema.estilizarTabla(tablaTurnos);
+        tablaTurnos.getColumnModel().getColumn(5).setCellRenderer(Tema.rendererEstado());
         tablaTurnos.getSelectionModel().addListSelectionListener(this::onSeleccionarTurno);
 
         JScrollPane scrollTabla = new JScrollPane(tablaTurnos);
         scrollTabla.setBorder(javax.swing.BorderFactory.createTitledBorder("Turnos"));
 
         JPanel panelSuperior = new JPanel(new BorderLayout());
+        panelSuperior.setBackground(Tema.SUPERFICIE);
         panelSuperior.add(panelForm, BorderLayout.CENTER);
         panelSuperior.add(panelBotones, BorderLayout.SOUTH);
 
