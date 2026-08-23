@@ -17,6 +17,10 @@ public final class Sesion {
         Sesion.rol = rol;
     }
 
+    public static void actualizarNombre(String nuevoNombre) {
+        Sesion.nombre = nuevoNombre;
+    }
+
     public static void cerrar() {
         usuarioId = null;
         usuario = null;

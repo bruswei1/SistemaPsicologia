@@ -260,6 +260,30 @@ public class UsuarioDAO extends DAO {
     }
 
     /**
+     * Cambia el nombre para mostrar de un usuario.
+     */
+    public boolean actualizarNombre(int usuarioId, String nombre) {
+        String sql = "UPDATE usuarios SET nombre=? WHERE id=?";
+
+        try (Connection con = obtenerConexion();
+             PreparedStatement pst = con.prepareStatement(sql)) {
+
+            pst.setString(1, nombre);
+            pst.setInt(2, usuarioId);
+
+            boolean ok = pst.executeUpdate() > 0;
+            if (ok) {
+                registrarExito("Actualizar nombre usuario ID: " + usuarioId);
+            }
+            return ok;
+
+        } catch (SQLException e) {
+            registrarError("actualizar nombre", e);
+            return false;
+        }
+    }
+
+    /**
      * Cambia el rol de un usuario.
      */
     public boolean actualizarRol(int usuarioId, String rol) {

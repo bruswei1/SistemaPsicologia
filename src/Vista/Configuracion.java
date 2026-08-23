@@ -1,12 +1,17 @@
 package Vista;
 
+import dao.AuditoriaDAO;
+import dao.PacienteDAO;
 import dao.UsuarioDAO;
+import modelos.Paciente;
 import modelos.Usuario;
 import util.Auditoria;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.io.File;
 import java.sql.Connection;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 /**
@@ -20,8 +25,12 @@ public class Configuracion extends javax.swing.JPanel {
 
     private final Runnable alVolver;
     private final Runnable alCerrarSesion;
+    private final Runnable alReconstruirShell;
     private final UsuarioDAO usuarioDAO;
+    private final PacienteDAO pacienteDAO;
+    private final AuditoriaDAO auditoriaDAO;
 
+    private JTextField txtMiNombre;
     private JPasswordField txtPasswordActual;
     private JPasswordField txtPasswordNueva;
     private JPasswordField txtPasswordConfirmar;
@@ -32,17 +41,30 @@ public class Configuracion extends javax.swing.JPanel {
     private JTextField txtNuevoNombre;
     private JPasswordField txtNuevaPasswordUsuario;
     private JComboBox<String> comboNuevoRol;
+    private JComboBox<String> comboCambiarRol;
 
-    public Configuracion(Runnable alVolver, Runnable alCerrarSesion) {
+    private JTable tablaAuditoria;
+    private DefaultTableModel modeloAuditoria;
+    private JTextField txtFiltroAuditoria;
+
+    private JButton btnModoOscuro;
+
+    public Configuracion(Runnable alVolver, Runnable alCerrarSesion, Runnable alReconstruirShell) {
         this.alVolver = alVolver;
         this.alCerrarSesion = alCerrarSesion;
+        this.alReconstruirShell = alReconstruirShell;
         this.usuarioDAO = new UsuarioDAO();
+        this.pacienteDAO = new PacienteDAO();
+        this.auditoriaDAO = new AuditoriaDAO();
         initComponents();
     }
 
     public void refrescar() {
         if (tablaUsuarios != null) {
             cargarUsuarios();
+        }
+        if (tablaAuditoria != null) {
+            cargarAuditoria();
         }
     }
 
@@ -62,10 +84,14 @@ public class Configuracion extends javax.swing.JPanel {
         centro.setBackground(Tema.FONDO);
         centro.setLayout(new BoxLayout(centro, BoxLayout.Y_AXIS));
         centro.add(crearPanelMiCuenta());
+        centro.add(Box.createVerticalStrut(15));
+        centro.add(crearPanelPreferencias());
 
         if (util.Sesion.esAdmin()) {
             centro.add(Box.createVerticalStrut(15));
             centro.add(crearPanelUsuarios());
+            centro.add(Box.createVerticalStrut(15));
+            centro.add(crearPanelAuditoria());
         }
 
         JScrollPane scroll = new JScrollPane(centro);
@@ -88,9 +114,11 @@ public class Configuracion extends javax.swing.JPanel {
 
         String usuario = "N/A";
         String rol = "N/A";
+        String nombreActual = "";
         try {
             usuario = util.Sesion.getUsuario();
             rol = util.Sesion.getRol();
+            nombreActual = util.Sesion.getNombre();
         } catch (Exception ignored) {
         }
 
@@ -105,12 +133,38 @@ public class Configuracion extends javax.swing.JPanel {
         lblInfo.setForeground(Tema.TEXTO_SECUNDARIO);
         panel.add(lblInfo, gbc);
 
+        txtMiNombre = new JTextField(nombreActual, 18);
+
+        gbc.gridwidth = 1;
+        gbc.gridy = 1;
+        gbc.gridx = 0;
+        gbc.weightx = 0;
+        panel.add(new JLabel("Nombre para mostrar:"), gbc);
+        gbc.gridx = 1;
+        gbc.weightx = 1;
+        panel.add(txtMiNombre, gbc);
+
+        JButton btnGuardarNombre = Tema.botonPrimario("Guardar nombre", Icono.GUARDAR);
+        btnGuardarNombre.addActionListener(e -> guardarMiNombre());
+        gbc.gridy = 2;
+        gbc.gridx = 1;
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.anchor = GridBagConstraints.WEST;
+        panel.add(btnGuardarNombre, gbc);
+
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.anchor = GridBagConstraints.CENTER;
+        gbc.gridy = 3;
+        gbc.gridx = 0;
+        gbc.gridwidth = 2;
+        panel.add(new JSeparator(), gbc);
+        gbc.gridwidth = 1;
+
         txtPasswordActual = new JPasswordField(18);
         txtPasswordNueva = new JPasswordField(18);
         txtPasswordConfirmar = new JPasswordField(18);
 
-        gbc.gridwidth = 1;
-        gbc.gridy = 1;
+        gbc.gridy = 4;
         gbc.gridx = 0;
         gbc.weightx = 0;
         panel.add(new JLabel("Contraseña actual:"), gbc);
@@ -118,7 +172,7 @@ public class Configuracion extends javax.swing.JPanel {
         gbc.weightx = 1;
         panel.add(txtPasswordActual, gbc);
 
-        gbc.gridy = 2;
+        gbc.gridy = 5;
         gbc.gridx = 0;
         gbc.weightx = 0;
         panel.add(new JLabel("Nueva contraseña:"), gbc);
@@ -126,7 +180,7 @@ public class Configuracion extends javax.swing.JPanel {
         gbc.weightx = 1;
         panel.add(txtPasswordNueva, gbc);
 
-        gbc.gridy = 3;
+        gbc.gridy = 6;
         gbc.gridx = 0;
         gbc.weightx = 0;
         panel.add(new JLabel("Confirmar nueva contraseña:"), gbc);
@@ -136,11 +190,78 @@ public class Configuracion extends javax.swing.JPanel {
 
         JButton btnCambiar = Tema.botonPrimario("Cambiar contraseña", Icono.GUARDAR);
         btnCambiar.addActionListener(e -> cambiarMiPassword());
-        gbc.gridy = 4;
+        gbc.gridy = 7;
         gbc.gridx = 1;
         gbc.fill = GridBagConstraints.NONE;
         gbc.anchor = GridBagConstraints.WEST;
         panel.add(btnCambiar, gbc);
+
+        return panel;
+    }
+
+    private JPanel crearPanelPreferencias() {
+        JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 10));
+        panel.setBackground(Tema.SUPERFICIE);
+        panel.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createTitledBorder("Preferencias"),
+            BorderFactory.createEmptyBorder(10, 15, 15, 15)
+        ));
+
+        btnModoOscuro = Tema.botonSecundario(Tema.esOscuro() ? "Modo claro" : "Modo oscuro");
+        btnModoOscuro.addActionListener(e -> {
+            Tema.alternarModoOscuro();
+            alReconstruirShell.run();
+        });
+        panel.add(btnModoOscuro);
+
+        JButton btnAdjuntos = Tema.botonSecundario("Abrir carpeta de adjuntos");
+        btnAdjuntos.addActionListener(e -> abrirCarpeta("adjuntos"));
+        panel.add(btnAdjuntos);
+
+        JButton btnReportes = Tema.botonSecundario("Abrir carpeta de reportes");
+        btnReportes.addActionListener(e -> abrirCarpeta("reportes"));
+        panel.add(btnReportes);
+
+        JButton btnExportar = Tema.botonPrimario("Exportar pacientes (CSV)", Icono.EXPORTAR);
+        btnExportar.addActionListener(e -> exportarPacientes());
+        panel.add(btnExportar);
+
+        return panel;
+    }
+
+    private JPanel crearPanelAuditoria() {
+        JPanel panel = new JPanel(new BorderLayout(10, 10));
+        panel.setBackground(Tema.SUPERFICIE);
+        panel.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createTitledBorder("Actividad reciente"),
+            BorderFactory.createEmptyBorder(15, 15, 15, 15)
+        ));
+
+        JPanel panelFiltro = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
+        panelFiltro.setBackground(Tema.SUPERFICIE);
+        panelFiltro.add(new JLabel("Filtrar por usuario/acción/entidad:"));
+        txtFiltroAuditoria = new JTextField(20);
+        txtFiltroAuditoria.setBorder(Tema.bordeCampo());
+        txtFiltroAuditoria.addActionListener(e -> cargarAuditoria());
+        panelFiltro.add(txtFiltroAuditoria);
+        JButton btnRefrescar = Tema.botonSecundario("Actualizar", Icono.LIMPIAR);
+        btnRefrescar.addActionListener(e -> cargarAuditoria());
+        panelFiltro.add(btnRefrescar);
+        panel.add(panelFiltro, BorderLayout.NORTH);
+
+        String[] columnas = {"Fecha", "Usuario", "Acción", "Entidad", "ID", "Detalle"};
+        modeloAuditoria = new DefaultTableModel(columnas, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
+        tablaAuditoria = new JTable(modeloAuditoria);
+        Tema.estilizarTabla(tablaAuditoria);
+        tablaAuditoria.setPreferredScrollableViewportSize(new Dimension(0, 200));
+        panel.add(new JScrollPane(tablaAuditoria), BorderLayout.CENTER);
+
+        cargarAuditoria();
 
         return panel;
     }
@@ -184,6 +305,13 @@ public class Configuracion extends javax.swing.JPanel {
         JButton btnEliminar = Tema.botonPeligro("Eliminar cuenta", Icono.ELIMINAR);
         btnEliminar.addActionListener(e -> eliminarUsuarioSeleccionado());
         panelAcciones.add(btnEliminar);
+
+        panelAcciones.add(new JLabel("Nuevo rol:"));
+        comboCambiarRol = new JComboBox<>(ROLES);
+        panelAcciones.add(comboCambiarRol);
+        JButton btnCambiarRol = Tema.botonPrimario("Cambiar rol", Icono.EDITAR);
+        btnCambiarRol.addActionListener(e -> cambiarRolSeleccionado());
+        panelAcciones.add(btnCambiarRol);
 
         JPanel panelFormNuevo = new JPanel(new GridLayout(2, 4, 10, 10));
         panelFormNuevo.setBackground(Tema.SUPERFICIE);
@@ -266,6 +394,135 @@ public class Configuracion extends javax.swing.JPanel {
                 });
             }
         });
+    }
+
+    private void guardarMiNombre() {
+        String nuevoNombre = txtMiNombre.getText().trim();
+        if (nuevoNombre.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "El nombre no puede quedar vacío", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        Integer idActual;
+        try {
+            idActual = util.Sesion.getUsuarioId();
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "No hay una sesión activa", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        if (usuarioDAO.actualizarNombre(idActual, nuevoNombre)) {
+            util.Sesion.actualizarNombre(nuevoNombre);
+            try (Connection cn = new conexion.Conexion().conectar()) {
+                Auditoria.registrar(cn, "EDITAR_NOMBRE_PROPIO", "usuarios", idActual, nuevoNombre);
+            } catch (Exception ex) {
+                System.out.println("Error registrando auditoría: " + ex.getMessage());
+            }
+            JOptionPane.showMessageDialog(this, "Nombre actualizado", "Éxito", JOptionPane.INFORMATION_MESSAGE);
+            alReconstruirShell.run();
+        } else {
+            JOptionPane.showMessageDialog(this, "No se pudo actualizar el nombre", "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void abrirCarpeta(String nombreCarpeta) {
+        try {
+            File carpeta = new File(nombreCarpeta);
+            if (!carpeta.exists()) {
+                carpeta.mkdirs();
+            }
+            if (!Desktop.isDesktopSupported()) {
+                JOptionPane.showMessageDialog(this, "Esta plataforma no permite abrir carpetas del explorador", "Aviso", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            Desktop.getDesktop().open(carpeta);
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "No se pudo abrir la carpeta: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void exportarPacientes() {
+        Tema.conCursorEspera(this, () -> {
+            List<Paciente> pacientes = util.Sesion.esPsicologo()
+                ? pacienteDAO.obtenerPorPsicologo(util.Sesion.getUsuarioId())
+                : pacienteDAO.obtenerTodos();
+
+            if (pacientes.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "No hay pacientes para exportar", "Información", JOptionPane.INFORMATION_MESSAGE);
+                return;
+            }
+
+            String csv = util.GeneradorReportes.generarCSVPacientes(pacientes);
+            String nombreArchivo = util.GeneradorReportes.obtenerNombreArchivoRespaldo();
+
+            File carpetaReportes = new File("reportes");
+            if (!carpetaReportes.exists()) {
+                carpetaReportes.mkdirs();
+            }
+            String rutaArchivo = new File(carpetaReportes, nombreArchivo).getPath();
+
+            try {
+                if (util.GeneradorReportes.guardarReportePDF(csv, rutaArchivo)) {
+                    JOptionPane.showMessageDialog(this, "Respaldo guardado en: " + rutaArchivo, "Éxito", JOptionPane.INFORMATION_MESSAGE);
+                } else {
+                    JOptionPane.showMessageDialog(this, "Error al guardar el respaldo", "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(this, "Error: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+    }
+
+    private void cargarAuditoria() {
+        modeloAuditoria.setRowCount(0);
+        String filtro = txtFiltroAuditoria != null ? txtFiltroAuditoria.getText().trim().toLowerCase() : "";
+        DateTimeFormatter formato = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+
+        Tema.conCursorEspera(this, () -> {
+            List<AuditoriaDAO.Registro> registros = auditoriaDAO.obtenerRecientes(200);
+            for (AuditoriaDAO.Registro r : registros) {
+                boolean coincide = filtro.isEmpty()
+                    || (r.usuarioNombre != null && r.usuarioNombre.toLowerCase().contains(filtro))
+                    || (r.accion != null && r.accion.toLowerCase().contains(filtro))
+                    || (r.entidad != null && r.entidad.toLowerCase().contains(filtro));
+
+                if (coincide) {
+                    modeloAuditoria.addRow(new Object[]{
+                        r.fecha.format(formato), r.usuarioNombre, r.accion, r.entidad,
+                        r.entidadId != null ? r.entidadId : "",
+                        r.detalle != null ? r.detalle : ""
+                    });
+                }
+            }
+        });
+    }
+
+    private void cambiarRolSeleccionado() {
+        int id = idSeleccionado();
+        if (id < 0) {
+            return;
+        }
+        String nuevoRol = (String) comboCambiarRol.getSelectedItem();
+
+        try {
+            if (util.Sesion.getUsuarioId() != null && util.Sesion.getUsuarioId() == id) {
+                JOptionPane.showMessageDialog(this, "No podés cambiar el rol de tu propia cuenta", "Advertencia", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+        } catch (Exception ignored) {
+        }
+
+        if (usuarioDAO.actualizarRol(id, nuevoRol)) {
+            try (Connection cn = new conexion.Conexion().conectar()) {
+                Auditoria.registrar(cn, "EDITAR_ROL_USUARIO", "usuarios", id, nuevoRol);
+            } catch (Exception ex) {
+                System.out.println("Error registrando auditoría: " + ex.getMessage());
+            }
+            JOptionPane.showMessageDialog(this, "Rol actualizado", "Éxito", JOptionPane.INFORMATION_MESSAGE);
+            cargarUsuarios();
+        } else {
+            JOptionPane.showMessageDialog(this, "No se pudo actualizar el rol", "Error", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     private void cambiarMiPassword() {
@@ -468,7 +725,7 @@ public class Configuracion extends javax.swing.JPanel {
             JFrame f = new JFrame("Configuración (prueba aislada)");
             f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             f.setIconImage(Tema.iconoApp());
-            f.getContentPane().add(new Configuracion(() -> System.exit(0), () -> System.exit(0)));
+            f.getContentPane().add(new Configuracion(() -> System.exit(0), () -> System.exit(0), () -> {}));
             f.setSize(900, 800);
             f.setLocationRelativeTo(null);
             f.setVisible(true);

@@ -116,16 +116,6 @@ public class MenuPrincipal extends javax.swing.JFrame {
 
         panelHeader.add(panelTextos, BorderLayout.WEST);
 
-        JPanel panelAcciones = new JPanel();
-        panelAcciones.setOpaque(false);
-        JButton btnModoOscuro = Tema.botonSecundario(Tema.esOscuro() ? "Modo claro" : "Modo oscuro");
-        btnModoOscuro.addActionListener(e -> {
-            Tema.alternarModoOscuro();
-            construirVentana();
-        });
-        panelAcciones.add(btnModoOscuro);
-        panelHeader.add(panelAcciones, BorderLayout.EAST);
-
         return panelHeader;
     }
 
@@ -247,7 +237,7 @@ public class MenuPrincipal extends javax.swing.JFrame {
 
     private void mostrarConfiguracion() {
         if (panelConfiguracion == null) {
-            panelConfiguracion = new Configuracion(this::mostrarInicio, this::cerrarSesion);
+            panelConfiguracion = new Configuracion(this::mostrarInicio, this::cerrarSesion, this::construirVentana);
             contenedor.add(panelConfiguracion, "configuracion");
         } else {
             panelConfiguracion.refrescar();

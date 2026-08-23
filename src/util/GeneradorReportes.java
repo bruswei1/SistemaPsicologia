@@ -6,8 +6,43 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 
 public class GeneradorReportes {
+
+    /** CSV con los datos básicos de una lista de pacientes, para respaldo/exportación. */
+    public static String generarCSVPacientes(List<Paciente> pacientes) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("id,nombre,apellido,email,telefono,genero,fecha_nacimiento,motivo_consulta\n");
+
+        for (Paciente p : pacientes) {
+            sb.append(p.getId()).append(',')
+              .append(csv(p.getNombre())).append(',')
+              .append(csv(p.getApellido())).append(',')
+              .append(csv(p.getEmail())).append(',')
+              .append(csv(p.getTelefono())).append(',')
+              .append(csv(p.getGenero())).append(',')
+              .append(p.getFechaNacimiento() != null ? p.getFechaNacimiento().toString() : "").append(',')
+              .append(csv(p.getMotivoConsulta())).append('\n');
+        }
+
+        return sb.toString();
+    }
+
+    private static String csv(String valor) {
+        if (valor == null) {
+            return "";
+        }
+        if (valor.contains(",") || valor.contains("\"") || valor.contains("\n")) {
+            return "\"" + valor.replace("\"", "\"\"") + "\"";
+        }
+        return valor;
+    }
+
+    public static String obtenerNombreArchivoRespaldo() {
+        String fecha = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
+        return "Respaldo_Pacientes_" + fecha + ".csv";
+    }
 
     public static String generarReportePaciente(Paciente paciente, HistoriaPsicologica historia) {
         StringBuilder sb = new StringBuilder();
