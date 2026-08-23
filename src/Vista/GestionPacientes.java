@@ -20,7 +20,7 @@ public class GestionPacientes extends javax.swing.JPanel {
     private JTextField txtEmail;
     private JTextField txtTelefono;
     private JTextField txtBusqueda;
-    private JSpinner spinnerFecha;
+    private JComboBox<String> comboGenero;
 
     public GestionPacientes(Runnable alVolver) {
         this.alVolver = alVolver;
@@ -133,9 +133,9 @@ public class GestionPacientes extends javax.swing.JPanel {
         txtTelefono.setBorder(Tema.bordeCampo());
         panelRegistro.add(txtTelefono);
 
-        panelRegistro.add(new JLabel("Fecha Nacimiento:"));
-        spinnerFecha = new JSpinner(new javax.swing.SpinnerDateModel());
-        panelRegistro.add(spinnerFecha);
+        panelRegistro.add(new JLabel("Género:"));
+        comboGenero = new JComboBox<>(new String[]{"Masculino", "Femenino", "Otro"});
+        panelRegistro.add(comboGenero);
 
         JButton btnGuardar = Tema.botonExito("Guardar", Icono.GUARDAR);
         btnGuardar.addActionListener(e -> guardarPaciente());
@@ -232,6 +232,7 @@ public class GestionPacientes extends javax.swing.JPanel {
         Tema.conCursorEspera(this, () -> {
             try {
                 Paciente paciente = new Paciente(nombre, apellido, email, telefono);
+                paciente.setGenero((String) comboGenero.getSelectedItem());
                 if (util.Sesion.esPsicologo()) {
                     paciente.setPsicologoId(util.Sesion.getUsuarioId());
                 }
@@ -299,6 +300,7 @@ public class GestionPacientes extends javax.swing.JPanel {
         txtApellido.setText("");
         txtEmail.setText("");
         txtTelefono.setText("");
+        comboGenero.setSelectedIndex(0);
         Tema.marcarError(txtNombre, true);
         Tema.marcarError(txtApellido, true);
     }
