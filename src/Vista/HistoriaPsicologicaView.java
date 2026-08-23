@@ -243,9 +243,15 @@ public class HistoriaPsicologicaView extends javax.swing.JFrame {
 
             String contenido = util.GeneradorReportes.generarReportePaciente(p, historia);
             String nombreArchivo = util.GeneradorReportes.obtenerNombreArchivoReporte(p.getNombre());
-            
-            if (util.GeneradorReportes.guardarReportePDF(contenido, nombreArchivo)) {
-                JOptionPane.showMessageDialog(this, "Reporte guardado en: " + nombreArchivo, "Éxito", JOptionPane.INFORMATION_MESSAGE);
+
+            java.io.File carpetaReportes = new java.io.File("reportes");
+            if (!carpetaReportes.exists()) {
+                carpetaReportes.mkdirs();
+            }
+            String rutaArchivo = new java.io.File(carpetaReportes, nombreArchivo).getPath();
+
+            if (util.GeneradorReportes.guardarReportePDF(contenido, rutaArchivo)) {
+                JOptionPane.showMessageDialog(this, "Reporte guardado en: " + rutaArchivo, "Éxito", JOptionPane.INFORMATION_MESSAGE);
             } else {
                 JOptionPane.showMessageDialog(this, "Error al guardar reporte", "Error", JOptionPane.ERROR_MESSAGE);
             }

@@ -13,12 +13,13 @@ public class PacienteDAO extends DAO {
     }
 
     /**
-     * Crear nuevo paciente con validaciones
+     * Crear nuevo paciente con validaciones.
+     * @return el ID generado, o -1 si falló
      */
-    public boolean crear(Paciente paciente) {
+    public int crear(Paciente paciente) {
         if (paciente == null || paciente.getNombre() == null) {
             registrarError("crear", new Exception("Paciente o nombre null"));
-            return false;
+            return -1;
         }
 
         String sql = "INSERT INTO pacientes (nombre, apellido, email, telefono, fecha_nacimiento, genero, " +
@@ -26,13 +27,13 @@ public class PacienteDAO extends DAO {
                      "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection con = obtenerConexion();
-             PreparedStatement pst = con.prepareStatement(sql)) {
+             PreparedStatement pst = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
             pst.setString(1, paciente.getNombre());
             pst.setString(2, paciente.getApellido());
             pst.setString(3, paciente.getEmail());
             pst.setString(4, paciente.getTelefono());
-            pst.setDate(5, paciente.getFechaNacimiento() != null ? 
+            pst.setDate(5, paciente.getFechaNacimiento() != null ?
                         Date.valueOf(paciente.getFechaNacimiento()) : null);
             pst.setString(6, paciente.getGenero());
             pst.setString(7, paciente.getDireccion());
@@ -44,11 +45,14 @@ public class PacienteDAO extends DAO {
 
             pst.executeUpdate();
             registrarExito("Crear paciente: " + paciente.getNombre());
-            return true;
+
+            try (ResultSet keys = pst.getGeneratedKeys()) {
+                return keys.next() ? keys.getInt(1) : -1;
+            }
 
         } catch (SQLException e) {
             registrarError("crear paciente", e);
-            return false;
+            return -1;
         }
     }
 
@@ -198,6 +202,63 @@ public class PacienteDAO extends DAO {
 
         } catch (SQLException e) {
             registrarError("buscar pacientes", e);
+        }
+
+        return pacientes;
+    }
+
+    /**
+     * Obtener pacientes asignados a un psicólogo específico
+     */
+    public List<Paciente> obtenerPorPsicologo(int psicologoId) {
+        List<Paciente> pacientes = new ArrayList<>();
+        String sql = "SELECT * FROM pacientes WHERE psicologo_id = ? ORDER BY nombre ASC";
+
+        try (Connection con = obtenerConexion();
+             PreparedStatement pst = con.prepareStatement(sql)) {
+
+            pst.setInt(1, psicologoId);
+            ResultSet rs = pst.executeQuery();
+
+            while (rs.next()) {
+                pacientes.add(mapearPaciente(rs));
+            }
+            registrarExito("Obtener pacientes por psicólogo " + psicologoId + ": " + pacientes.size());
+
+        } catch (SQLException e) {
+            registrarError("obtener por psicólogo: " + psicologoId, e);
+        }
+
+        return pacientes;
+    }
+
+    /**
+     * Buscar por nombre/apellido dentro de los pacientes de un psicólogo específico
+     */
+    public List<Paciente> buscarPorPsicologo(String termino, int psicologoId) {
+        if (termino == null || termino.trim().isEmpty()) {
+            return obtenerPorPsicologo(psicologoId);
+        }
+
+        List<Paciente> pacientes = new ArrayList<>();
+        String sql = "SELECT * FROM pacientes WHERE psicologo_id = ? AND (nombre LIKE ? OR apellido LIKE ?) ORDER BY nombre ASC";
+
+        try (Connection con = obtenerConexion();
+             PreparedStatement pst = con.prepareStatement(sql)) {
+
+            String patron = "%" + termino + "%";
+            pst.setInt(1, psicologoId);
+            pst.setString(2, patron);
+            pst.setString(3, patron);
+            ResultSet rs = pst.executeQuery();
+
+            while (rs.next()) {
+                pacientes.add(mapearPaciente(rs));
+            }
+            registrarExito("Buscar pacientes por psicólogo " + psicologoId + ": " + pacientes.size() + " resultados");
+
+        } catch (SQLException e) {
+            registrarError("buscar por psicólogo: " + psicologoId, e);
         }
 
         return pacientes;

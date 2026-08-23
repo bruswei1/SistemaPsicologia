@@ -6,6 +6,7 @@ import util.*;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.sql.Connection;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -178,7 +179,9 @@ public class GestionPacientes extends javax.swing.JFrame {
     private void cargarPacientes() {
         modeloTabla.setRowCount(0);
         try {
-            List<Paciente> pacientes = pacienteDAO.obtenerTodos();
+            List<Paciente> pacientes = util.Sesion.esPsicologo()
+                ? pacienteDAO.obtenerPorPsicologo(util.Sesion.getUsuarioId())
+                : pacienteDAO.obtenerTodos();
             for (Paciente p : pacientes) {
                 modeloTabla.addRow(new Object[]{
                     p.getId(),
@@ -203,7 +206,9 @@ public class GestionPacientes extends javax.swing.JFrame {
 
         modeloTabla.setRowCount(0);
         try {
-            List<Paciente> pacientes = pacienteDAO.buscar(termino);
+            List<Paciente> pacientes = util.Sesion.esPsicologo()
+                ? pacienteDAO.buscarPorPsicologo(termino, util.Sesion.getUsuarioId())
+                : pacienteDAO.buscar(termino);
             for (Paciente p : pacientes) {
                 modeloTabla.addRow(new Object[]{
                     p.getId(),
@@ -232,8 +237,17 @@ public class GestionPacientes extends javax.swing.JFrame {
 
         try {
             Paciente paciente = new Paciente(nombre, apellido, email, telefono);
-            
-            if (pacienteDAO.crear(paciente)) {
+            if (util.Sesion.esPsicologo()) {
+                paciente.setPsicologoId(util.Sesion.getUsuarioId());
+            }
+
+            int nuevoId = pacienteDAO.crear(paciente);
+            if (nuevoId > 0) {
+                try (Connection cn = new conexion.Conexion().conectar()) {
+                    Auditoria.registrar(cn, "CREAR_PACIENTE", "pacientes", nuevoId, null);
+                } catch (Exception ex) {
+                    System.out.println("Error registrando auditoría: " + ex.getMessage());
+                }
                 JOptionPane.showMessageDialog(this, "Paciente guardado exitosamente", "Éxito", JOptionPane.INFORMATION_MESSAGE);
                 cargarPacientes();
                 limpiarFormulario();
@@ -255,6 +269,11 @@ public class GestionPacientes extends javax.swing.JFrame {
         
         if (opcion == JOptionPane.YES_OPTION) {
             if (pacienteDAO.eliminar(id)) {
+                try (Connection cn = new conexion.Conexion().conectar()) {
+                    Auditoria.registrar(cn, "ELIMINAR_PACIENTE", "pacientes", id, null);
+                } catch (Exception ex) {
+                    System.out.println("Error registrando auditoría: " + ex.getMessage());
+                }
                 JOptionPane.showMessageDialog(this, "Paciente eliminado", "Éxito", JOptionPane.INFORMATION_MESSAGE);
                 cargarPacientes();
             }
@@ -269,6 +288,12 @@ public class GestionPacientes extends javax.swing.JFrame {
         }
 
         int id = (int) modeloTabla.getValueAt(fila, 0);
+        try (Connection cn = new conexion.Conexion().conectar()) {
+            Auditoria.registrar(cn, "VER_PACIENTE", "pacientes", id, null);
+        } catch (Exception ex) {
+            System.out.println("Error registrando auditoría: " + ex.getMessage());
+        }
+
         DetallePaciente ventanaDetalle = new DetallePaciente(id);
         ventanaDetalle.setVisible(true);
     }

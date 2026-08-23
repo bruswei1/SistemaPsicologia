@@ -2,6 +2,7 @@ package dao;
 
 import conexion.Conexion;
 import modelos.Usuario;
+import util.PasswordUtil;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,14 +31,11 @@ public class UsuarioDAO extends DAO {
             ResultSet rs = pst.executeQuery();
 
             if (rs.next()) {
-                // Verificación simple (en producción usar bcrypt)
-                Usuario u = mapearUsuario(rs);
-                
-                // Credenciales válidas en el sistema
-                if ((usuario.equals("admin") && contraseña.equals("admin123")) ||
-                    (usuario.equals("psicologo") && contraseña.equals("psico123")) ||
-                    (usuario.equals("secretaria") && contraseña.equals("secre123"))) {
-                    
+                String salt = rs.getString("salt");
+                String hashEsperado = rs.getString("password_hash");
+
+                if (PasswordUtil.verificar(contraseña, salt, hashEsperado)) {
+                    Usuario u = mapearUsuario(rs);
                     registrarExito("Autenticar usuario: " + usuario);
                     return u;
                 }

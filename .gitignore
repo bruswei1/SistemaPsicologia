@@ -12,6 +12,9 @@
 # Patient file attachments (local storage, not source)
 /adjuntos/
 
+# Generated patient reports (local output, not source)
+/reportes/
+
 # OS files
 Thumbs.db
 .DS_Store
