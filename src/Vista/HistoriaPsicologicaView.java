@@ -128,16 +128,19 @@ public class HistoriaPsicologicaView extends javax.swing.JFrame {
         footerPanel.add(btnExportar);
 
         JButton btnVolver = Tema.botonSecundario("Volver", Icono.VOLVER);
-        btnVolver.addActionListener(e -> {
-            this.dispose();
-            MenuPrincipal menu = new MenuPrincipal();
-            menu.setVisible(true);
-        });
+        btnVolver.addActionListener(e -> volverAlMenu());
         footerPanel.add(btnVolver);
+        Tema.atajoEscape(this, btnVolver, this::volverAlMenu);
 
         mainPanel.add(footerPanel, BorderLayout.SOUTH);
 
         getContentPane().add(mainPanel);
+    }
+
+    private void volverAlMenu() {
+        this.dispose();
+        MenuPrincipal menu = new MenuPrincipal();
+        menu.setVisible(true);
     }
 
     private void cargarPacientes() {
@@ -177,37 +180,39 @@ public class HistoriaPsicologicaView extends javax.swing.JFrame {
     }
 
     private void guardarHistoria() {
-        try {
-            Paciente p = (Paciente) comboPaciente.getSelectedItem();
-            if (p == null) {
-                JOptionPane.showMessageDialog(this, "Seleccione un paciente", "Advertencia", JOptionPane.WARNING_MESSAGE);
-                return;
-            }
-
-            HistoriaPsicologica historia = historiaDAO.obtenerPorPaciente(p.getId());
-            
-            if (historia == null) {
-                historia = new HistoriaPsicologica();
-                historia.setPacienteId(p.getId());
-                historiaDAO.crear(historia);
-                historia = historiaDAO.obtenerPorPaciente(p.getId());
-            }
-
-            historia.setAntecedentes(txtAntecedentes.getText());
-            historia.setMotivoConsulta(txtMotivoConsulta.getText());
-            historia.setObservacionesGenerales(txtObservaciones.getText());
-            historia.setDiagnostico(txtDiagnostico.getText());
-            historia.setTratamiento(txtTratamiento.getText());
-
-            if (historiaDAO.actualizar(historia)) {
-                JOptionPane.showMessageDialog(this, "Historia guardada correctamente", "Éxito", JOptionPane.INFORMATION_MESSAGE);
-                cargarHistoria();
-            } else {
-                JOptionPane.showMessageDialog(this, "Error al guardar", "Error", JOptionPane.ERROR_MESSAGE);
-            }
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Error: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        Paciente p = (Paciente) comboPaciente.getSelectedItem();
+        if (p == null) {
+            JOptionPane.showMessageDialog(this, "Seleccione un paciente", "Advertencia", JOptionPane.WARNING_MESSAGE);
+            return;
         }
+
+        Tema.conCursorEspera(this, () -> {
+            try {
+                HistoriaPsicologica historia = historiaDAO.obtenerPorPaciente(p.getId());
+
+                if (historia == null) {
+                    historia = new HistoriaPsicologica();
+                    historia.setPacienteId(p.getId());
+                    historiaDAO.crear(historia);
+                    historia = historiaDAO.obtenerPorPaciente(p.getId());
+                }
+
+                historia.setAntecedentes(txtAntecedentes.getText());
+                historia.setMotivoConsulta(txtMotivoConsulta.getText());
+                historia.setObservacionesGenerales(txtObservaciones.getText());
+                historia.setDiagnostico(txtDiagnostico.getText());
+                historia.setTratamiento(txtTratamiento.getText());
+
+                if (historiaDAO.actualizar(historia)) {
+                    JOptionPane.showMessageDialog(this, "Historia guardada correctamente", "Éxito", JOptionPane.INFORMATION_MESSAGE);
+                    cargarHistoria();
+                } else {
+                    JOptionPane.showMessageDialog(this, "Error al guardar", "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(this, "Error: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        });
     }
 
     private void limpiarFormulario() {

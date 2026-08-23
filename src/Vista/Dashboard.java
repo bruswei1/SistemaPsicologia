@@ -95,15 +95,18 @@ public class Dashboard extends javax.swing.JFrame {
         footerPanel.setLayout(new FlowLayout(FlowLayout.RIGHT, 20, 15));
 
         JButton btnVolver = Tema.botonPrimario("Volver", Icono.VOLVER);
-        btnVolver.addActionListener(e -> {
-            this.dispose();
-            MenuPrincipal menu = new MenuPrincipal();
-            menu.setVisible(true);
-        });
+        btnVolver.addActionListener(e -> volverAlMenu());
         footerPanel.add(btnVolver);
+        Tema.atajoEscape(this, btnVolver, this::volverAlMenu);
 
         mainPanel.add(footerPanel, BorderLayout.SOUTH);
         getContentPane().add(mainPanel);
+    }
+
+    private void volverAlMenu() {
+        this.dispose();
+        MenuPrincipal menu = new MenuPrincipal();
+        menu.setVisible(true);
     }
 
     private void cargarDatos() {

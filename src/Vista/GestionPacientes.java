@@ -148,12 +148,9 @@ public class GestionPacientes extends javax.swing.JFrame {
         footerPanel.add(btnEliminar);
 
         JButton btnVolver = Tema.botonSecundario("Volver", Icono.VOLVER);
-        btnVolver.addActionListener(e -> {
-            this.dispose();
-            MenuPrincipal menu = new MenuPrincipal();
-            menu.setVisible(true);
-        });
+        btnVolver.addActionListener(e -> volverAlMenu());
         footerPanel.add(btnVolver);
+        Tema.atajoEscape(this, btnVolver, this::volverAlMenu);
 
         JPanel panelSur = new JPanel(new BorderLayout());
         panelSur.add(panelRegistro, BorderLayout.CENTER);
@@ -163,25 +160,33 @@ public class GestionPacientes extends javax.swing.JFrame {
         getContentPane().add(mainPanel);
     }
 
+    private void volverAlMenu() {
+        this.dispose();
+        MenuPrincipal menu = new MenuPrincipal();
+        menu.setVisible(true);
+    }
+
     private void cargarPacientes() {
         modeloTabla.setRowCount(0);
-        try {
-            List<Paciente> pacientes = util.Sesion.esPsicologo()
-                ? pacienteDAO.obtenerPorPsicologo(util.Sesion.getUsuarioId())
-                : pacienteDAO.obtenerTodos();
-            for (Paciente p : pacientes) {
-                modeloTabla.addRow(new Object[]{
-                    p.getId(),
-                    p.getNombre(),
-                    p.getApellido(),
-                    p.getEmail() != null ? p.getEmail() : "N/A",
-                    p.getTelefono() != null ? p.getTelefono() : "N/A",
-                    p.getGenero() != null ? p.getGenero() : "N/A"
-                });
+        Tema.conCursorEspera(this, () -> {
+            try {
+                List<Paciente> pacientes = util.Sesion.esPsicologo()
+                    ? pacienteDAO.obtenerPorPsicologo(util.Sesion.getUsuarioId())
+                    : pacienteDAO.obtenerTodos();
+                for (Paciente p : pacientes) {
+                    modeloTabla.addRow(new Object[]{
+                        p.getId(),
+                        p.getNombre(),
+                        p.getApellido(),
+                        p.getEmail() != null ? p.getEmail() : "N/A",
+                        p.getTelefono() != null ? p.getTelefono() : "N/A",
+                        p.getGenero() != null ? p.getGenero() : "N/A"
+                    });
+                }
+            } catch (Exception e) {
+                System.out.println("Error cargando pacientes: " + e.getMessage());
             }
-        } catch (Exception e) {
-            System.out.println("Error cargando pacientes: " + e.getMessage());
-        }
+        });
     }
 
     private void buscarPacientes() {
@@ -192,23 +197,25 @@ public class GestionPacientes extends javax.swing.JFrame {
         }
 
         modeloTabla.setRowCount(0);
-        try {
-            List<Paciente> pacientes = util.Sesion.esPsicologo()
-                ? pacienteDAO.buscarPorPsicologo(termino, util.Sesion.getUsuarioId())
-                : pacienteDAO.buscar(termino);
-            for (Paciente p : pacientes) {
-                modeloTabla.addRow(new Object[]{
-                    p.getId(),
-                    p.getNombre(),
-                    p.getApellido(),
-                    p.getEmail() != null ? p.getEmail() : "N/A",
-                    p.getTelefono() != null ? p.getTelefono() : "N/A",
-                    p.getGenero() != null ? p.getGenero() : "N/A"
-                });
+        Tema.conCursorEspera(this, () -> {
+            try {
+                List<Paciente> pacientes = util.Sesion.esPsicologo()
+                    ? pacienteDAO.buscarPorPsicologo(termino, util.Sesion.getUsuarioId())
+                    : pacienteDAO.buscar(termino);
+                for (Paciente p : pacientes) {
+                    modeloTabla.addRow(new Object[]{
+                        p.getId(),
+                        p.getNombre(),
+                        p.getApellido(),
+                        p.getEmail() != null ? p.getEmail() : "N/A",
+                        p.getTelefono() != null ? p.getTelefono() : "N/A",
+                        p.getGenero() != null ? p.getGenero() : "N/A"
+                    });
+                }
+            } catch (Exception e) {
+                System.out.println("Error buscando pacientes: " + e.getMessage());
             }
-        } catch (Exception e) {
-            System.out.println("Error buscando pacientes: " + e.getMessage());
-        }
+        });
     }
 
     private void guardarPaciente() {
@@ -225,26 +232,28 @@ public class GestionPacientes extends javax.swing.JFrame {
             return;
         }
 
-        try {
-            Paciente paciente = new Paciente(nombre, apellido, email, telefono);
-            if (util.Sesion.esPsicologo()) {
-                paciente.setPsicologoId(util.Sesion.getUsuarioId());
-            }
-
-            int nuevoId = pacienteDAO.crear(paciente);
-            if (nuevoId > 0) {
-                try (Connection cn = new conexion.Conexion().conectar()) {
-                    Auditoria.registrar(cn, "CREAR_PACIENTE", "pacientes", nuevoId, null);
-                } catch (Exception ex) {
-                    System.out.println("Error registrando auditoría: " + ex.getMessage());
+        Tema.conCursorEspera(this, () -> {
+            try {
+                Paciente paciente = new Paciente(nombre, apellido, email, telefono);
+                if (util.Sesion.esPsicologo()) {
+                    paciente.setPsicologoId(util.Sesion.getUsuarioId());
                 }
-                JOptionPane.showMessageDialog(this, "Paciente guardado exitosamente", "Éxito", JOptionPane.INFORMATION_MESSAGE);
-                cargarPacientes();
-                limpiarFormulario();
+
+                int nuevoId = pacienteDAO.crear(paciente);
+                if (nuevoId > 0) {
+                    try (Connection cn = new conexion.Conexion().conectar()) {
+                        Auditoria.registrar(cn, "CREAR_PACIENTE", "pacientes", nuevoId, null);
+                    } catch (Exception ex) {
+                        System.out.println("Error registrando auditoría: " + ex.getMessage());
+                    }
+                    JOptionPane.showMessageDialog(this, "Paciente guardado exitosamente", "Éxito", JOptionPane.INFORMATION_MESSAGE);
+                    cargarPacientes();
+                    limpiarFormulario();
+                }
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(this, "Error: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             }
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Error: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-        }
+        });
     }
 
     private void eliminarPaciente() {

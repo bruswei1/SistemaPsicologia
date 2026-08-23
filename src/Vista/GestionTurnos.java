@@ -108,16 +108,19 @@ public class GestionTurnos extends javax.swing.JFrame {
         footerPanel.add(btnEliminar);
 
         JButton btnVolver = Tema.botonSecundario("Volver", Icono.VOLVER);
-        btnVolver.addActionListener(e -> {
-            this.dispose();
-            MenuPrincipal menu = new MenuPrincipal();
-            menu.setVisible(true);
-        });
+        btnVolver.addActionListener(e -> volverAlMenu());
         footerPanel.add(btnVolver);
+        Tema.atajoEscape(this, btnVolver, this::volverAlMenu);
 
         mainPanel.add(footerPanel, BorderLayout.SOUTH);
 
         getContentPane().add(mainPanel);
+    }
+
+    private void volverAlMenu() {
+        this.dispose();
+        MenuPrincipal menu = new MenuPrincipal();
+        menu.setVisible(true);
     }
 
     private void cargarDatos() {
@@ -182,33 +185,36 @@ public class GestionTurnos extends javax.swing.JFrame {
     }
 
     private void guardarTurno() {
-        try {
-            Paciente p = (Paciente) comboPaciente.getSelectedItem();
-            Usuario u = (Usuario) comboPsicologo.getSelectedItem();
-            java.util.Date fechaDate = (java.util.Date) spinnerFechaHora.getValue();
-            LocalDateTime fechaHora = new java.sql.Timestamp(fechaDate.getTime()).toLocalDateTime();
+        Paciente p = (Paciente) comboPaciente.getSelectedItem();
+        Usuario u = (Usuario) comboPsicologo.getSelectedItem();
 
-            if (p == null || u == null) {
-                JOptionPane.showMessageDialog(this, "Complete todos los campos", "Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-
-            Turno turno = new Turno(p.getId(), u.getId(), fechaHora);
-            int nuevoId = turnoDAO.crear(turno);
-            if (nuevoId > 0) {
-                try (Connection cn = new conexion.Conexion().conectar()) {
-                    Auditoria.registrar(cn, "CREAR_TURNO", "turnos", nuevoId, null);
-                } catch (Exception ex) {
-                    System.out.println("Error registrando auditoría: " + ex.getMessage());
-                }
-                JOptionPane.showMessageDialog(this, "Turno guardado exitosamente", "Éxito", JOptionPane.INFORMATION_MESSAGE);
-                actualizarTabla();
-            } else {
-                JOptionPane.showMessageDialog(this, "Error al guardar turno", "Error", JOptionPane.ERROR_MESSAGE);
-            }
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Error: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        if (p == null || u == null) {
+            JOptionPane.showMessageDialog(this, "Complete todos los campos", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
         }
+
+        Tema.conCursorEspera(this, () -> {
+            try {
+                java.util.Date fechaDate = (java.util.Date) spinnerFechaHora.getValue();
+                LocalDateTime fechaHora = new java.sql.Timestamp(fechaDate.getTime()).toLocalDateTime();
+
+                Turno turno = new Turno(p.getId(), u.getId(), fechaHora);
+                int nuevoId = turnoDAO.crear(turno);
+                if (nuevoId > 0) {
+                    try (Connection cn = new conexion.Conexion().conectar()) {
+                        Auditoria.registrar(cn, "CREAR_TURNO", "turnos", nuevoId, null);
+                    } catch (Exception ex) {
+                        System.out.println("Error registrando auditoría: " + ex.getMessage());
+                    }
+                    JOptionPane.showMessageDialog(this, "Turno guardado exitosamente", "Éxito", JOptionPane.INFORMATION_MESSAGE);
+                    actualizarTabla();
+                } else {
+                    JOptionPane.showMessageDialog(this, "Error al guardar turno", "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(this, "Error: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        });
     }
 
     private void eliminarTurno() {

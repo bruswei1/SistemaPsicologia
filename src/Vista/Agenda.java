@@ -89,6 +89,7 @@ public class Agenda extends JFrame {
 
         JButton btnVolver = Tema.botonSecundario("Volver al menú", Icono.VOLVER);
         btnVolver.addActionListener(evt -> volverAlMenu());
+        Tema.atajoEscape(this, btnVolver, this::volverAlMenu);
 
         JPanel panelBotones = new JPanel();
         panelBotones.setBackground(Tema.SUPERFICIE);

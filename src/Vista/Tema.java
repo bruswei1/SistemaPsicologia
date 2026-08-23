@@ -6,13 +6,17 @@ import com.formdev.flatlaf.FlatLightLaf;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JComponent;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JRootPane;
 import javax.swing.JTable;
+import javax.swing.KeyStroke;
 import javax.swing.SwingConstants;
 import javax.swing.UIManager;
 import javax.swing.border.Border;
 import javax.swing.table.DefaultTableCellRenderer;
+import java.awt.event.KeyEvent;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Cursor;
@@ -295,6 +299,34 @@ public final class Tema {
                 return wrapper;
             }
         };
+    }
+
+    /** Ejecuta `accion` mostrando el cursor de espera mientras dura (consultas a la BD en el hilo de UI). */
+    public static void conCursorEspera(java.awt.Window ventana, Runnable accion) {
+        Cursor anterior = ventana.getCursor();
+        ventana.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+        try {
+            accion.run();
+        } finally {
+            ventana.setCursor(anterior);
+        }
+    }
+
+    /**
+     * Liga la tecla Esc, en cualquier parte de la ventana, a `accion` (típicamente "Volver"/"Cerrar").
+     * Además agrega "(Esc)" al tooltip del botón correspondiente para que el atajo sea descubrible.
+     */
+    public static void atajoEscape(JFrame ventana, JButton botonAsociado, Runnable accion) {
+        JRootPane root = ventana.getRootPane();
+        root.registerKeyboardAction(
+            e -> accion.run(),
+            KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0),
+            JComponent.WHEN_IN_FOCUSED_WINDOW
+        );
+        if (botonAsociado != null) {
+            String actual = botonAsociado.getToolTipText();
+            botonAsociado.setToolTipText((actual != null ? actual + " " : "") + "(Esc)");
+        }
     }
 
     /** Ícono de aplicación (para JFrame.setIconImage): cuadrado redondeado con las iniciales "SP". */
