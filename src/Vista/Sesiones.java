@@ -8,6 +8,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Types;
+import java.time.format.DateTimeFormatter;
+import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
@@ -28,6 +30,7 @@ public class Sesiones extends JPanel {
     private final Runnable alVolver;
 
     private JComboBox<PacienteItem> cmbPaciente;
+    private JComboBox<TurnoItem> cmbTurno;
     private JTextArea txtSubjetivo;
     private JTextArea txtObjetivo;
     private JTextArea txtAnalisis;
@@ -62,14 +65,17 @@ public class Sesiones extends JPanel {
         cmbPaciente = new JComboBox<>();
         cmbPaciente.addActionListener(evt -> {
             limpiarFormularioSesion();
+            cargarTurnosDelPaciente();
             cargarSesiones();
         });
+
+        cmbTurno = new JComboBox<>();
 
         lblCronometro = new JLabel("00:00");
         lblCronometro.setFont(new Font("Segoe UI", Font.BOLD, 18));
         lblCronometro.setForeground(Tema.PRIMARIO);
         btnIniciar = Tema.botonExito("Iniciar sesión");
-        btnDetener = Tema.botonPeligro("Detener");
+        btnDetener = Tema.botonPeligro("Pausar");
         btnDetener.setEnabled(false);
         btnIniciar.addActionListener(evt -> iniciarCronometro());
         btnDetener.addActionListener(evt -> detenerCronometro());
@@ -82,9 +88,21 @@ public class Sesiones extends JPanel {
         panelCronometro.add(btnDetener);
 
         JPanel panelPaciente = new JPanel(new BorderLayout(4, 4));
+        panelPaciente.setBackground(Tema.SUPERFICIE);
         panelPaciente.add(new JLabel("Paciente*: "), BorderLayout.WEST);
         panelPaciente.add(cmbPaciente, BorderLayout.CENTER);
         panelPaciente.add(panelCronometro, BorderLayout.EAST);
+
+        JPanel panelTurno = new JPanel(new BorderLayout(4, 4));
+        panelTurno.setBackground(Tema.SUPERFICIE);
+        panelTurno.add(new JLabel("Turno asociado (opcional): "), BorderLayout.WEST);
+        panelTurno.add(cmbTurno, BorderLayout.CENTER);
+
+        JPanel panelPacienteYTurno = new JPanel();
+        panelPacienteYTurno.setBackground(Tema.SUPERFICIE);
+        panelPacienteYTurno.setLayout(new BoxLayout(panelPacienteYTurno, BoxLayout.Y_AXIS));
+        panelPacienteYTurno.add(panelPaciente);
+        panelPacienteYTurno.add(panelTurno);
 
         txtSubjetivo = new JTextArea(4, 20);
         txtObjetivo = new JTextArea(4, 20);
@@ -106,6 +124,9 @@ public class Sesiones extends JPanel {
         JButton btnNueva = Tema.botonPrimario("Nueva sesión", Icono.NUEVO);
         btnNueva.addActionListener(evt -> limpiarFormularioSesion());
 
+        JButton btnExportar = Tema.botonPrimario("Exportar nota", Icono.EXPORTAR);
+        btnExportar.addActionListener(evt -> exportarNota());
+
         JButton btnVolver = Tema.botonSecundario("Volver al menú", Icono.VOLVER);
         btnVolver.addActionListener(evt -> volverAlMenu());
         Tema.atajoEscape(this, btnVolver, this::volverAlMenu);
@@ -114,11 +135,12 @@ public class Sesiones extends JPanel {
         panelBotones.setBackground(Tema.SUPERFICIE);
         panelBotones.add(btnGuardar);
         panelBotones.add(btnNueva);
+        panelBotones.add(btnExportar);
         panelBotones.add(btnVolver);
 
         JPanel panelFormulario = new JPanel(new BorderLayout(6, 6));
         panelFormulario.setBackground(Tema.SUPERFICIE);
-        panelFormulario.add(panelPaciente, BorderLayout.NORTH);
+        panelFormulario.add(panelPacienteYTurno, BorderLayout.NORTH);
         panelFormulario.add(panelSoap, BorderLayout.CENTER);
         panelFormulario.add(panelPrivado, BorderLayout.SOUTH);
 
@@ -202,6 +224,53 @@ public class Sesiones extends JPanel {
         return item != null ? item.id : null;
     }
 
+    private void cargarTurnosDelPaciente() {
+        cmbTurno.removeAllItems();
+        cmbTurno.addItem(new TurnoItem(null, "(Sin turno asociado)"));
+
+        Integer pacienteId = pacienteSeleccionadoId();
+        if (pacienteId == null) {
+            return;
+        }
+
+        DateTimeFormatter formato = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+        String sql = "SELECT id, fecha_hora, estado FROM turnos WHERE paciente_id = ? ";
+        if (Sesion.esPsicologo()) {
+            sql += "AND psicologo_id = ? ";
+        }
+        sql += "ORDER BY fecha_hora DESC";
+
+        try (Connection cn = new Conexion().conectar();
+             PreparedStatement ps = cn.prepareStatement(sql)) {
+
+            ps.setInt(1, pacienteId);
+            if (Sesion.esPsicologo()) {
+                ps.setInt(2, Sesion.getUsuarioId());
+            }
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    String etiqueta = rs.getTimestamp("fecha_hora").toLocalDateTime().format(formato)
+                        + " (" + rs.getString("estado") + ")";
+                    cmbTurno.addItem(new TurnoItem(rs.getInt("id"), etiqueta));
+                }
+            }
+
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Error al cargar turnos: " + e.getMessage());
+        }
+    }
+
+    private void seleccionarTurno(Integer turnoId) {
+        for (int i = 0; i < cmbTurno.getItemCount(); i++) {
+            TurnoItem item = cmbTurno.getItemAt(i);
+            if ((turnoId == null && item.id == null) || (turnoId != null && turnoId.equals(item.id))) {
+                cmbTurno.setSelectedIndex(i);
+                return;
+            }
+        }
+    }
+
     private void cargarSesiones() {
 
         modeloTabla.setRowCount(0);
@@ -269,6 +338,8 @@ public class Sesiones extends JPanel {
                 txtAnalisis.setText(valorOVacio(rs.getString("analisis")));
                 txtPlan.setText(valorOVacio(rs.getString("plan")));
                 txtNotasPrivadas.setText(valorOVacio(rs.getString("notas_privadas")));
+                Object turnoIdRaw = rs.getObject("turno_id");
+                seleccionarTurno(turnoIdRaw != null ? (Integer) turnoIdRaw : null);
 
                 Object duracion = rs.getObject("duracion_minutos");
                 duracionMinutosRegistrada = duracion != null ? (Integer) duracion : null;
@@ -292,11 +363,13 @@ public class Sesiones extends JPanel {
         }
 
         boolean esEdicion = sesionIdActual != null;
+        TurnoItem turnoSeleccionado = (TurnoItem) cmbTurno.getSelectedItem();
+        Integer turnoId = turnoSeleccionado != null ? turnoSeleccionado.id : null;
 
         String sql = esEdicion
-            ? "UPDATE sesiones SET subjetivo=?, objetivo=?, analisis=?, plan=?, notas_privadas=?, duracion_minutos=? WHERE id=?"
-            : "INSERT INTO sesiones (paciente_id, psicologo_id, subjetivo, objetivo, analisis, plan, notas_privadas, duracion_minutos) "
-                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+            ? "UPDATE sesiones SET subjetivo=?, objetivo=?, analisis=?, plan=?, notas_privadas=?, duracion_minutos=?, turno_id=? WHERE id=?"
+            : "INSERT INTO sesiones (paciente_id, psicologo_id, subjetivo, objetivo, analisis, plan, notas_privadas, duracion_minutos, turno_id) "
+                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection cn = new Conexion().conectar()) {
 
@@ -317,7 +390,12 @@ public class Sesiones extends JPanel {
                     } else {
                         ps.setNull(6, Types.INTEGER);
                     }
-                    ps.setInt(7, sesionIdActual);
+                    if (turnoId != null) {
+                        ps.setInt(7, turnoId);
+                    } else {
+                        ps.setNull(7, Types.INTEGER);
+                    }
+                    ps.setInt(8, sesionIdActual);
                 } else {
                     ps.setInt(1, pacienteId);
                     ps.setInt(2, Sesion.getUsuarioId());
@@ -330,6 +408,11 @@ public class Sesiones extends JPanel {
                         ps.setInt(8, duracionMinutosRegistrada);
                     } else {
                         ps.setNull(8, Types.INTEGER);
+                    }
+                    if (turnoId != null) {
+                        ps.setInt(9, turnoId);
+                    } else {
+                        ps.setNull(9, Types.INTEGER);
                     }
                 }
 
@@ -367,9 +450,60 @@ public class Sesiones extends JPanel {
         return valor != null ? valor : "";
     }
 
+    private void exportarNota() {
+        Integer pacienteId = pacienteSeleccionadoId();
+        if (pacienteId == null) {
+            JOptionPane.showMessageDialog(this, "Seleccioná un paciente");
+            return;
+        }
+        if (txtSubjetivo.getText().trim().isEmpty() && txtObjetivo.getText().trim().isEmpty()
+                && txtAnalisis.getText().trim().isEmpty() && txtPlan.getText().trim().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "No hay datos cargados en la nota para exportar", "Información", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+
+        PacienteItem paciente = (PacienteItem) cmbPaciente.getSelectedItem();
+        StringBuilder sb = new StringBuilder();
+        sb.append("================================================================================\n");
+        sb.append("NOTA DE SESIÓN (SOAP)\n");
+        sb.append("================================================================================\n\n");
+        sb.append("Paciente: ").append(paciente != null ? paciente.nombre : "N/A").append("\n");
+        sb.append("Fecha de exportación: ").append(java.time.LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"))).append("\n\n");
+        sb.append("SUBJETIVO\n--------------------------------------------------------------------------------\n");
+        sb.append(txtSubjetivo.getText().trim()).append("\n\n");
+        sb.append("OBJETIVO\n--------------------------------------------------------------------------------\n");
+        sb.append(txtObjetivo.getText().trim()).append("\n\n");
+        sb.append("ANÁLISIS\n--------------------------------------------------------------------------------\n");
+        sb.append(txtAnalisis.getText().trim()).append("\n\n");
+        sb.append("PLAN\n--------------------------------------------------------------------------------\n");
+        sb.append(txtPlan.getText().trim()).append("\n");
+        sb.append("================================================================================\n");
+
+        java.io.File carpetaReportes = new java.io.File("reportes");
+        if (!carpetaReportes.exists()) {
+            carpetaReportes.mkdirs();
+        }
+        String nombreArchivo = "NotaSOAP_" + (paciente != null ? paciente.nombre.replace(" ", "_") : "paciente")
+            + "_" + java.time.LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")) + ".txt";
+        String rutaArchivo = new java.io.File(carpetaReportes, nombreArchivo).getPath();
+
+        try {
+            if (util.GeneradorReportes.guardarReportePDF(sb.toString(), rutaArchivo)) {
+                JOptionPane.showMessageDialog(this, "Nota exportada en: " + rutaArchivo, "Éxito", JOptionPane.INFORMATION_MESSAGE);
+            } else {
+                JOptionPane.showMessageDialog(this, "Error al exportar la nota", "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Error: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
     private void limpiarFormularioSesion() {
         sesionIdActual = null;
         tablaSesiones.clearSelection();
+        if (cmbTurno.getItemCount() > 0) {
+            cmbTurno.setSelectedIndex(0);
+        }
         txtSubjetivo.setText("");
         txtObjetivo.setText("");
         txtAnalisis.setText("");
@@ -404,6 +538,21 @@ public class Sesiones extends JPanel {
         @Override
         public String toString() {
             return nombre;
+        }
+    }
+
+    private static class TurnoItem {
+        final Integer id;
+        final String etiqueta;
+
+        TurnoItem(Integer id, String etiqueta) {
+            this.id = id;
+            this.etiqueta = etiqueta;
+        }
+
+        @Override
+        public String toString() {
+            return etiqueta;
         }
     }
 }
