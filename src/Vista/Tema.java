@@ -1,5 +1,8 @@
 package Vista;
 
+import com.formdev.flatlaf.FlatDarkLaf;
+import com.formdev.flatlaf.FlatLaf;
+import com.formdev.flatlaf.FlatLightLaf;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JComponent;
@@ -7,6 +10,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTable;
 import javax.swing.SwingConstants;
+import javax.swing.UIManager;
 import javax.swing.border.Border;
 import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.Color;
@@ -91,19 +95,33 @@ public final class Tema {
         return oscuro;
     }
 
+    /**
+     * Alterna modo oscuro: cambia el Look & Feel real de FlatLaf (no solo la paleta propia),
+     * para que campos de texto, combos, spinners, scrollbars y diálogos —que no pintamos
+     * nosotros— también se oscurezcan en vez de quedar blancos. Solo afecta a ventanas
+     * creadas de ahí en más: una ya abierta hay que recrearla (dispose()+new).
+     */
     public static void alternarModoOscuro() {
         oscuro = !oscuro;
+        try {
+            UIManager.setLookAndFeel(oscuro ? new FlatDarkLaf() : new FlatLightLaf());
+            FlatLaf.updateUI();
+        } catch (Exception e) {
+            System.out.println("No se pudo cambiar el Look & Feel: " + e.getMessage());
+        }
         aplicarPaleta();
     }
 
     private static void aplicarPaleta() {
         if (oscuro) {
-            FONDO = new Color(22, 24, 30);
-            SUPERFICIE = new Color(32, 35, 43);
-            BORDE = new Color(54, 58, 69);
-            BORDE_SUAVE = new Color(45, 48, 58);
-            TEXTO_PRIMARIO = new Color(230, 233, 239);
-            TEXTO_SECUNDARIO = new Color(160, 167, 179);
+            // Toma los colores reales del tema oscuro de FlatLaf para que nuestros
+            // paneles/tarjetas pintados a mano combinen con los componentes nativos.
+            FONDO = colorOMenos("Panel.background", new Color(30, 31, 34));
+            SUPERFICIE = colorOMenos("TextField.background", new Color(43, 45, 48));
+            BORDE = colorOMenos("Component.borderColor", new Color(82, 86, 90));
+            BORDE_SUAVE = colorOMenos("Separator.foreground", new Color(60, 63, 67));
+            TEXTO_PRIMARIO = colorOMenos("Label.foreground", new Color(230, 230, 230));
+            TEXTO_SECUNDARIO = colorOMenos("Label.disabledForeground", new Color(150, 150, 150));
         } else {
             FONDO = new Color(244, 246, 249);
             SUPERFICIE = new Color(255, 255, 255);
@@ -112,6 +130,11 @@ public final class Tema {
             TEXTO_PRIMARIO = new Color(30, 35, 45);
             TEXTO_SECUNDARIO = new Color(108, 117, 130);
         }
+    }
+
+    private static Color colorOMenos(String claveUIManager, Color porDefecto) {
+        Color c = UIManager.getColor(claveUIManager);
+        return c != null ? c : porDefecto;
     }
 
     public static JButton botonPrimario(String texto) {
