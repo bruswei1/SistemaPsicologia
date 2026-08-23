@@ -2,8 +2,12 @@ package Vista;
 
 import dao.*;
 import modelos.*;
+import util.Auditoria;
 import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.sql.Connection;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 public class HistoriaPsicologicaView extends javax.swing.JPanel {
@@ -11,6 +15,7 @@ public class HistoriaPsicologicaView extends javax.swing.JPanel {
     private final Runnable alVolver;
     private HistoriaPsicologicaDAO historiaDAO;
     private PacienteDAO pacienteDAO;
+    private AuditoriaDAO auditoriaDAO;
     private JComboBox<Paciente> comboPaciente;
     private JTextArea txtAntecedentes;
     private JTextArea txtMotivoConsulta;
@@ -18,11 +23,13 @@ public class HistoriaPsicologicaView extends javax.swing.JPanel {
     private JTextArea txtDiagnostico;
     private JTextArea txtTratamiento;
     private JLabel lblUltimaActualizacion;
+    private Integer historiaIdActual;
 
     public HistoriaPsicologicaView(Runnable alVolver) {
         this.alVolver = alVolver;
         this.historiaDAO = new HistoriaPsicologicaDAO();
         this.pacienteDAO = new PacienteDAO();
+        this.auditoriaDAO = new AuditoriaDAO();
 
         initComponents();
         cargarPacientes();
@@ -129,6 +136,10 @@ public class HistoriaPsicologicaView extends javax.swing.JPanel {
         btnExportar.addActionListener(e -> exportarReporte());
         footerPanel.add(btnExportar);
 
+        JButton btnHistorial = Tema.botonSecundario("Historial de cambios");
+        btnHistorial.addActionListener(e -> verHistorialCambios());
+        footerPanel.add(btnHistorial);
+
         JButton btnVolver = Tema.botonSecundario("Volver", Icono.VOLVER);
         btnVolver.addActionListener(e -> alVolver.run());
         footerPanel.add(btnVolver);
@@ -157,18 +168,26 @@ public class HistoriaPsicologicaView extends javax.swing.JPanel {
             if (p == null) return;
 
             HistoriaPsicologica historia = historiaDAO.obtenerPorPaciente(p.getId());
-            
+
             if (historia != null) {
+                historiaIdActual = historia.getId();
                 txtAntecedentes.setText(historia.getAntecedentes() != null ? historia.getAntecedentes() : "");
                 txtMotivoConsulta.setText(historia.getMotivoConsulta() != null ? historia.getMotivoConsulta() : "");
                 txtObservaciones.setText(historia.getObservacionesGenerales() != null ? historia.getObservacionesGenerales() : "");
                 txtDiagnostico.setText(historia.getDiagnostico() != null ? historia.getDiagnostico() : "");
                 txtTratamiento.setText(historia.getTratamiento() != null ? historia.getTratamiento() : "");
-                
+
                 if (historia.getUltimaActualizacion() != null) {
                     lblUltimaActualizacion.setText("Última actualización: " + historia.getUltimaActualizacion());
                 }
+
+                try (Connection cn = new conexion.Conexion().conectar()) {
+                    Auditoria.registrar(cn, "VER_HISTORIA", "historia_psicologica", historiaIdActual, null);
+                } catch (Exception ex) {
+                    System.out.println("Error registrando auditoría: " + ex.getMessage());
+                }
             } else {
+                historiaIdActual = null;
                 limpiarFormulario();
             }
         } catch (Exception e) {
@@ -201,6 +220,11 @@ public class HistoriaPsicologicaView extends javax.swing.JPanel {
                 historia.setTratamiento(txtTratamiento.getText());
 
                 if (historiaDAO.actualizar(historia)) {
+                    try (Connection cn = new conexion.Conexion().conectar()) {
+                        Auditoria.registrar(cn, "EDITAR_HISTORIA", "historia_psicologica", historia.getId(), null);
+                    } catch (Exception ex) {
+                        System.out.println("Error registrando auditoría: " + ex.getMessage());
+                    }
                     JOptionPane.showMessageDialog(this, "Historia guardada correctamente", "Éxito", JOptionPane.INFORMATION_MESSAGE);
                     cargarHistoria();
                 } else {
@@ -210,6 +234,36 @@ public class HistoriaPsicologicaView extends javax.swing.JPanel {
                 JOptionPane.showMessageDialog(this, "Error: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             }
         });
+    }
+
+    private void verHistorialCambios() {
+        if (historiaIdActual == null) {
+            JOptionPane.showMessageDialog(this, "Este paciente todavía no tiene historia clínica guardada", "Información", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+
+        List<AuditoriaDAO.Registro> registros = auditoriaDAO.obtenerPorEntidad("historia_psicologica", historiaIdActual);
+
+        String[] columnas = {"Fecha", "Usuario", "Acción"};
+        DefaultTableModel modelo = new DefaultTableModel(columnas, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
+        DateTimeFormatter formato = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+        for (AuditoriaDAO.Registro r : registros) {
+            modelo.addRow(new Object[]{r.fecha.format(formato), r.usuarioNombre, r.accion});
+        }
+
+        JTable tabla = new JTable(modelo);
+        Tema.estilizarTabla(tabla);
+        JScrollPane scroll = new JScrollPane(tabla);
+        scroll.setPreferredSize(new Dimension(450, 250));
+
+        JOptionPane.showMessageDialog(this, scroll,
+            "Historial de cambios (no guarda versiones de texto, solo quién y cuándo)",
+            JOptionPane.PLAIN_MESSAGE);
     }
 
     private void limpiarFormulario() {

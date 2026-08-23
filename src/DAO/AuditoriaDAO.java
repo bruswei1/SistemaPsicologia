@@ -59,6 +59,30 @@ public class AuditoriaDAO extends DAO {
         return lista;
     }
 
+    /** Historial de una entidad puntual (ej. todos los cambios de una historia clínica). */
+    public List<Registro> obtenerPorEntidad(String entidad, int entidadId) {
+        List<Registro> lista = new ArrayList<>();
+        String sql = "SELECT * FROM auditoria WHERE entidad = ? AND entidad_id = ? ORDER BY fecha DESC";
+
+        try (Connection con = obtenerConexion();
+             PreparedStatement pst = con.prepareStatement(sql)) {
+
+            pst.setString(1, entidad);
+            pst.setInt(2, entidadId);
+            try (ResultSet rs = pst.executeQuery()) {
+                while (rs.next()) {
+                    lista.add(mapear(rs));
+                }
+            }
+            registrarExito("Obtener auditoría de " + entidad + " #" + entidadId + ": " + lista.size());
+
+        } catch (SQLException e) {
+            registrarError("obtener por entidad", e);
+        }
+
+        return lista;
+    }
+
     private Registro mapear(ResultSet rs) throws SQLException {
         int entidadIdRaw = rs.getInt("entidad_id");
         Integer entidadId = rs.wasNull() ? null : entidadIdRaw;
