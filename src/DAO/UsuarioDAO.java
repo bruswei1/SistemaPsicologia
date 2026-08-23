@@ -284,6 +284,37 @@ public class UsuarioDAO extends DAO {
     }
 
     /**
+     * Elimina definitivamente un usuario. Falla si tiene pacientes, turnos, sesiones,
+     * documentos o auditoría asociados (integridad referencial) — en ese caso hay que
+     * reasignar o borrar esos datos primero, o simplemente desactivar la cuenta en su lugar.
+     * @return null si se eliminó correctamente, o un mensaje de error listo para mostrar
+     */
+    public String eliminar(int usuarioId) {
+        String sql = "DELETE FROM usuarios WHERE id = ?";
+
+        try (Connection con = obtenerConexion();
+             PreparedStatement pst = con.prepareStatement(sql)) {
+
+            pst.setInt(1, usuarioId);
+            int filas = pst.executeUpdate();
+
+            if (filas > 0) {
+                registrarExito("Eliminar usuario ID: " + usuarioId);
+                return null;
+            }
+            return "No se encontró el usuario.";
+
+        } catch (SQLIntegrityConstraintViolationException e) {
+            registrarError("eliminar usuario (referencias)", e);
+            return "No se puede eliminar: tiene pacientes, turnos, sesiones u otros registros asociados. "
+                + "Reasigná o eliminá esos datos primero, o desactivá la cuenta en vez de borrarla.";
+        } catch (SQLException e) {
+            registrarError("eliminar usuario", e);
+            return "Error al eliminar: " + e.getMessage();
+        }
+    }
+
+    /**
      * Mapear ResultSet a objeto Usuario
      */
     private Usuario mapearUsuario(ResultSet rs) throws SQLException {

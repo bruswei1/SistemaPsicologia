@@ -181,6 +181,10 @@ public class Configuracion extends javax.swing.JPanel {
         btnDesactivar.addActionListener(e -> cambiarActivoSeleccionado(false));
         panelAcciones.add(btnDesactivar);
 
+        JButton btnEliminar = Tema.botonPeligro("Eliminar cuenta", Icono.ELIMINAR);
+        btnEliminar.addActionListener(e -> eliminarUsuarioSeleccionado());
+        panelAcciones.add(btnEliminar);
+
         JPanel panelFormNuevo = new JPanel(new GridLayout(2, 4, 10, 10));
         panelFormNuevo.setBackground(Tema.SUPERFICIE);
         panelFormNuevo.setBorder(BorderFactory.createCompoundBorder(
@@ -417,6 +421,42 @@ public class Configuracion extends javax.swing.JPanel {
             cargarUsuarios();
         } else {
             JOptionPane.showMessageDialog(this, "No se pudo actualizar el usuario", "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void eliminarUsuarioSeleccionado() {
+        int id = idSeleccionado();
+        if (id < 0) {
+            return;
+        }
+
+        try {
+            if (util.Sesion.getUsuarioId() != null && util.Sesion.getUsuarioId() == id) {
+                JOptionPane.showMessageDialog(this, "No podés eliminar tu propia cuenta", "Advertencia", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+        } catch (Exception ignored) {
+        }
+
+        String usuarioNombre = String.valueOf(modeloTabla.getValueAt(tablaUsuarios.getSelectedRow(), 1));
+        int opcion = JOptionPane.showConfirmDialog(this,
+            "¿Eliminar definitivamente la cuenta \"" + usuarioNombre + "\"? Esta acción no se puede deshacer.",
+            "Eliminar cuenta", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+        if (opcion != JOptionPane.YES_OPTION) {
+            return;
+        }
+
+        String error = usuarioDAO.eliminar(id);
+        if (error == null) {
+            try (Connection cn = new conexion.Conexion().conectar()) {
+                Auditoria.registrar(cn, "ELIMINAR_USUARIO", "usuarios", id, usuarioNombre);
+            } catch (Exception ex) {
+                System.out.println("Error registrando auditoría: " + ex.getMessage());
+            }
+            JOptionPane.showMessageDialog(this, "Usuario eliminado", "Éxito", JOptionPane.INFORMATION_MESSAGE);
+            cargarUsuarios();
+        } else {
+            JOptionPane.showMessageDialog(this, error, "No se pudo eliminar", JOptionPane.ERROR_MESSAGE);
         }
     }
 
