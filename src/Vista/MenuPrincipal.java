@@ -5,10 +5,10 @@ import java.awt.*;
 
 /**
  * Shell de la aplicación: una única ventana con un CardLayout que va mostrando
- * cada pantalla (Pacientes, Turnos, Sesiones, Historia, Dashboard, Agenda) en
- * vez de abrir un JFrame nuevo por cada una. Las pantallas se crean una sola
- * vez (perezosamente, al navegar a ellas por primera vez) y se refrescan cada
- * vez que se vuelve a mostrar esa tarjeta.
+ * cada pantalla (Pacientes, Sesiones, Historia, Dashboard, Agenda) en vez de
+ * abrir un JFrame nuevo por cada una. Las pantallas se crean una sola vez
+ * (perezosamente, al navegar a ellas por primera vez) y se refrescan cada vez
+ * que se vuelve a mostrar esa tarjeta.
  */
 public class MenuPrincipal extends javax.swing.JFrame {
 
@@ -18,7 +18,6 @@ public class MenuPrincipal extends javax.swing.JFrame {
     private JPanel contenedor;
 
     private GestionPacientes panelPacientes;
-    private GestionTurnos panelTurnos;
     private Sesiones panelSesiones;
     private HistoriaPsicologicaView panelHistoria;
     private Dashboard panelDashboard;
@@ -55,7 +54,6 @@ public class MenuPrincipal extends javax.swing.JFrame {
         setDefaultCloseOperation(EXIT_ON_CLOSE);
 
         panelPacientes = null;
-        panelTurnos = null;
         panelSesiones = null;
         panelHistoria = null;
         panelDashboard = null;
@@ -122,17 +120,13 @@ public class MenuPrincipal extends javax.swing.JFrame {
     private JPanel crearGridOpciones() {
         JPanel panelContent = new JPanel();
         panelContent.setBackground(Tema.FONDO);
-        panelContent.setLayout(new GridLayout(2, 4, 30, 30));
+        panelContent.setLayout(new GridLayout(2, 3, 30, 30));
         panelContent.setBorder(BorderFactory.createEmptyBorder(
             Tema.ESPACIADO_GRANDE, 50, Tema.ESPACIADO_GRANDE, 50));
 
         panelContent.add(new TarjetaMenu(Icono.PACIENTES, Tema.ACENTO_AZUL,
             "Pacientes", "Registrar y gestionar\npacientes",
             this::mostrarPacientes));
-
-        panelContent.add(new TarjetaMenu(Icono.TURNOS, Tema.ACENTO_VERDE,
-            "Turnos", "Crear y gestionar\nturnos",
-            this::mostrarTurnos));
 
         panelContent.add(new TarjetaMenu(Icono.SESIONES, Tema.ACENTO_MORADO,
             "Sesiones", "Registrar notas clínicas\nde sesiones",
@@ -169,16 +163,6 @@ public class MenuPrincipal extends javax.swing.JFrame {
             panelPacientes.refrescar();
         }
         cardLayout.show(contenedor, "pacientes");
-    }
-
-    private void mostrarTurnos() {
-        if (panelTurnos == null) {
-            panelTurnos = new GestionTurnos(this::mostrarInicio);
-            contenedor.add(panelTurnos, "turnos");
-        } else {
-            panelTurnos.refrescar();
-        }
-        cardLayout.show(contenedor, "turnos");
     }
 
     private void mostrarSesiones() {

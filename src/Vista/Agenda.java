@@ -91,6 +91,9 @@ public class Agenda extends JPanel {
         JButton btnNuevo = Tema.botonPrimario("Nuevo turno", Icono.NUEVO);
         btnNuevo.addActionListener(evt -> limpiarCampos());
 
+        JButton btnEliminar = Tema.botonPeligro("Eliminar", Icono.ELIMINAR);
+        btnEliminar.addActionListener(evt -> eliminarTurno());
+
         JButton btnVolver = Tema.botonSecundario("Volver al menú", Icono.VOLVER);
         btnVolver.addActionListener(evt -> alVolver.run());
         Tema.atajoEscape(this, btnVolver, alVolver);
@@ -99,6 +102,7 @@ public class Agenda extends JPanel {
         panelBotones.setBackground(Tema.SUPERFICIE);
         panelBotones.add(btnGuardar);
         panelBotones.add(btnNuevo);
+        panelBotones.add(btnEliminar);
         panelBotones.add(btnVolver);
 
         modeloTabla = new DefaultTableModel(
@@ -261,6 +265,43 @@ public class Agenda extends JPanel {
             limpiarCampos();
             cargarTurnos();
 
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Error: " + e.getMessage());
+        }
+    }
+
+    private void eliminarTurno() {
+        if (turnoIdActual == null) {
+            JOptionPane.showMessageDialog(this, "Seleccioná un turno de la tabla para eliminar");
+            return;
+        }
+
+        int opcion = JOptionPane.showConfirmDialog(this, "¿Eliminar definitivamente este turno?",
+            "Eliminar turno", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+        if (opcion != JOptionPane.YES_OPTION) {
+            return;
+        }
+
+        try (Connection cn = new Conexion().conectar()) {
+
+            if (cn == null) {
+                throw new IllegalStateException("No se pudo conectar a la base de datos");
+            }
+
+            try (PreparedStatement ps = cn.prepareStatement("DELETE FROM turnos WHERE id=?")) {
+                ps.setInt(1, turnoIdActual);
+                ps.executeUpdate();
+            }
+
+            Auditoria.registrar(cn, "ELIMINAR_TURNO", "turnos", turnoIdActual, null);
+
+            JOptionPane.showMessageDialog(this, "Turno eliminado");
+            limpiarCampos();
+            cargarTurnos();
+
+        } catch (java.sql.SQLIntegrityConstraintViolationException e) {
+            JOptionPane.showMessageDialog(this,
+                "No se puede eliminar: este turno tiene una sesión registrada. Cambiá el estado a \"cancelado\" en vez de borrarlo.");
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, "Error: " + e.getMessage());
         }
