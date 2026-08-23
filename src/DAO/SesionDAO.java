@@ -99,6 +99,26 @@ public class SesionDAO {
         return 0;
     }
 
+    public int obtenerCountSesionesCompletadasDesde(java.time.LocalDate desde) {
+        String sql = "SELECT COUNT(*) as total FROM sesiones WHERE fecha >= ?";
+
+        try (Connection con = conexion.conectar();
+             PreparedStatement pst = con.prepareStatement(sql)) {
+
+            pst.setDate(1, Date.valueOf(desde));
+            try (ResultSet rs = pst.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt("total");
+                }
+            }
+
+        } catch (SQLException e) {
+            System.out.println("Error al contar sesiones desde fecha: " + e.getMessage());
+        }
+
+        return 0;
+    }
+
     public boolean actualizar(Sesion sesion) {
         String sql = "UPDATE sesiones SET subjetivo=?, objetivo=?, analisis=?, plan=?, notas_privadas=? WHERE id=?";
 

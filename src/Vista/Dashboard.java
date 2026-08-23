@@ -6,12 +6,16 @@ import java.awt.*;
 
 public class Dashboard extends javax.swing.JPanel {
 
+    private static final String[] PERIODOS = {"Todo", "Este mes"};
+
     private final Runnable alVolver;
     private TarjetaEstadistica lblPacientes;
     private TarjetaEstadistica lblSesiones;
     private TarjetaEstadistica lblTurnos;
     private TarjetaEstadistica lblPsicologos;
     private GraficoBarras grafico;
+    private GraficoBarras graficoTendencia;
+    private JComboBox<String> comboPeriodo;
 
     public Dashboard(Runnable alVolver) {
         this.alVolver = alVolver;
@@ -31,22 +35,38 @@ public class Dashboard extends javax.swing.JPanel {
         mainPanel.setLayout(new BorderLayout(10, 10));
 
         // Header
-        JPanel headerPanel = new JPanel();
+        JPanel headerPanel = new JPanel(new BorderLayout());
         headerPanel.setBackground(Tema.SUPERFICIE);
         headerPanel.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Tema.BORDE_SUAVE));
-        headerPanel.setLayout(new BoxLayout(headerPanel, BoxLayout.Y_AXIS));
+
+        JPanel headerTextos = new JPanel();
+        headerTextos.setOpaque(false);
+        headerTextos.setLayout(new BoxLayout(headerTextos, BoxLayout.Y_AXIS));
 
         JLabel lblTitulo = new JLabel("Dashboard");
         lblTitulo.setFont(Tema.TITULO);
         lblTitulo.setForeground(Tema.TEXTO_PRIMARIO);
         lblTitulo.setBorder(BorderFactory.createEmptyBorder(15, 20, 5, 0));
-        headerPanel.add(lblTitulo);
+        headerTextos.add(lblTitulo);
 
         JLabel lblSubtitulo = new JLabel("Resumen general del sistema");
         lblSubtitulo.setFont(Tema.TEXTO_CHICO);
         lblSubtitulo.setForeground(Tema.TEXTO_SECUNDARIO);
         lblSubtitulo.setBorder(BorderFactory.createEmptyBorder(0, 20, 15, 0));
-        headerPanel.add(lblSubtitulo);
+        headerTextos.add(lblSubtitulo);
+
+        headerPanel.add(headerTextos, BorderLayout.WEST);
+
+        JPanel headerAcciones = new JPanel();
+        headerAcciones.setOpaque(false);
+        headerAcciones.add(new JLabel("Período:"));
+        comboPeriodo = new JComboBox<>(PERIODOS);
+        comboPeriodo.addActionListener(e -> cargarDatos());
+        headerAcciones.add(comboPeriodo);
+        JButton btnActualizar = Tema.botonSecundario("Actualizar", Icono.LIMPIAR);
+        btnActualizar.addActionListener(e -> cargarDatos());
+        headerAcciones.add(btnActualizar);
+        headerPanel.add(headerAcciones, BorderLayout.EAST);
 
         mainPanel.add(headerPanel, BorderLayout.NORTH);
 
@@ -80,11 +100,34 @@ public class Dashboard extends javax.swing.JPanel {
         JPanel panelGrafico = new JPanel(new BorderLayout());
         panelGrafico.setBackground(Tema.SUPERFICIE);
         panelGrafico.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(Tema.BORDE),
-            BorderFactory.createEmptyBorder(20, 20, 20, 20)
+            BorderFactory.createTitledBorder("Comparativa"),
+            BorderFactory.createEmptyBorder(10, 20, 20, 20)
         ));
         panelGrafico.add(grafico, BorderLayout.CENTER);
-        centro.add(panelGrafico, BorderLayout.CENTER);
+
+        String[] mesesEtiqueta = new String[6];
+        Color[] coloresTendencia = new Color[6];
+        java.time.YearMonth actual = java.time.YearMonth.now();
+        java.time.format.DateTimeFormatter formatoMes = java.time.format.DateTimeFormatter.ofPattern("MMM");
+        for (int i = 0; i < 6; i++) {
+            mesesEtiqueta[i] = actual.minusMonths(5 - i).format(formatoMes);
+            coloresTendencia[i] = Tema.ACENTO_AZUL.icono;
+        }
+        graficoTendencia = new GraficoBarras(mesesEtiqueta, coloresTendencia);
+        JPanel panelTendencia = new JPanel(new BorderLayout());
+        panelTendencia.setBackground(Tema.SUPERFICIE);
+        panelTendencia.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createTitledBorder("Pacientes nuevos por mes"),
+            BorderFactory.createEmptyBorder(10, 20, 20, 20)
+        ));
+        panelTendencia.add(graficoTendencia, BorderLayout.CENTER);
+
+        JPanel panelGraficos = new JPanel(new GridLayout(2, 1, 0, 20));
+        panelGraficos.setBackground(Tema.FONDO);
+        panelGraficos.add(panelGrafico);
+        panelGraficos.add(panelTendencia);
+
+        centro.add(panelGraficos, BorderLayout.CENTER);
 
         mainPanel.add(centro, BorderLayout.CENTER);
 
@@ -104,6 +147,11 @@ public class Dashboard extends javax.swing.JPanel {
     }
 
     private void cargarDatos() {
+        boolean esteMes = comboPeriodo != null && "Este mes".equals(comboPeriodo.getSelectedItem());
+        java.time.LocalDate desde = esteMes
+            ? java.time.YearMonth.now().atDay(1)
+            : java.time.LocalDate.of(2000, 1, 1);
+
         SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
             @Override
             protected Void doInBackground() throws Exception {
@@ -113,10 +161,11 @@ public class Dashboard extends javax.swing.JPanel {
                     TurnoDAO turnoDAO = new TurnoDAO();
                     UsuarioDAO usuarioDAO = new UsuarioDAO();
 
-                    int totalPacientes = pacienteDAO.obtenerTodos().size();
-                    int totalSesiones = sesionDAO.obtenerCountSesionesCompletadas();
-                    int totalTurnos = turnoDAO.obtenerCountTurnosConfirmados();
+                    int totalPacientes = pacienteDAO.contarDesde(desde);
+                    int totalSesiones = sesionDAO.obtenerCountSesionesCompletadasDesde(desde);
+                    int totalTurnos = turnoDAO.obtenerCountTurnosConfirmadosDesde(desde);
                     int totalPsicologos = usuarioDAO.obtenerPorRol("psicologo").size();
+                    java.util.LinkedHashMap<String, Integer> nuevosPorMes = pacienteDAO.obtenerNuevosPorMes(6);
 
                     SwingUtilities.invokeLater(() -> {
                         lblPacientes.setNumero(String.valueOf(totalPacientes));
@@ -124,6 +173,7 @@ public class Dashboard extends javax.swing.JPanel {
                         lblTurnos.setNumero(String.valueOf(totalTurnos));
                         lblPsicologos.setNumero(String.valueOf(totalPsicologos));
                         grafico.setValores(new int[]{totalPacientes, totalSesiones, totalTurnos, totalPsicologos});
+                        graficoTendencia.setValores(nuevosPorMes.values().stream().mapToInt(Integer::intValue).toArray());
                     });
 
                     System.out.println("Dashboard actualizado: " + totalPacientes + " pacientes");
