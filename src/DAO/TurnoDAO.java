@@ -14,19 +14,20 @@ public class TurnoDAO extends DAO {
     }
 
     /**
-     * Crear nuevo turno
+     * Crear nuevo turno.
+     * @return el ID generado, o -1 si falló
      */
-    public boolean crear(Turno turno) {
+    public int crear(Turno turno) {
         if (turno == null || turno.getPacienteId() <= 0 || turno.getPsicologoId() <= 0) {
             registrarError("crear", new Exception("Turno inválido"));
-            return false;
+            return -1;
         }
 
         String sql = "INSERT INTO turnos (paciente_id, psicologo_id, fecha_hora, duracion_minutos, estado, notas) " +
                      "VALUES (?, ?, ?, ?, ?, ?)";
 
         try (Connection con = obtenerConexion();
-             PreparedStatement pst = con.prepareStatement(sql)) {
+             PreparedStatement pst = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
             pst.setInt(1, turno.getPacienteId());
             pst.setInt(2, turno.getPsicologoId());
@@ -37,11 +38,14 @@ public class TurnoDAO extends DAO {
 
             pst.executeUpdate();
             registrarExito("Crear turno para paciente: " + turno.getPacienteId());
-            return true;
+
+            try (ResultSet keys = pst.getGeneratedKeys()) {
+                return keys.next() ? keys.getInt(1) : -1;
+            }
 
         } catch (SQLException e) {
             registrarError("crear turno", e);
-            return false;
+            return -1;
         }
     }
 
@@ -123,6 +127,31 @@ public class TurnoDAO extends DAO {
 
         } catch (SQLException e) {
             registrarError("obtener pendientes", e);
+        }
+
+        return turnos;
+    }
+
+    /**
+     * Obtener turnos pendientes de un psicólogo específico
+     */
+    public List<Turno> obtenerPendientesPorPsicologo(int psicologoId) {
+        List<Turno> turnos = new ArrayList<>();
+        String sql = "SELECT * FROM turnos WHERE psicologo_id = ? AND estado = 'programado' AND fecha_hora >= NOW() ORDER BY fecha_hora";
+
+        try (Connection con = obtenerConexion();
+             PreparedStatement pst = con.prepareStatement(sql)) {
+
+            pst.setInt(1, psicologoId);
+            ResultSet rs = pst.executeQuery();
+
+            while (rs.next()) {
+                turnos.add(mapearTurno(rs));
+            }
+            registrarExito("Obtener turnos pendientes por psicólogo " + psicologoId + ": " + turnos.size());
+
+        } catch (SQLException e) {
+            registrarError("obtener pendientes por psicólogo: " + psicologoId, e);
         }
 
         return turnos;

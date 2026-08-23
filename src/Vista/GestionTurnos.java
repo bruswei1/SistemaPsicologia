@@ -2,9 +2,11 @@ package Vista;
 
 import dao.*;
 import modelos.*;
+import util.Auditoria;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.sql.Connection;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -120,16 +122,29 @@ public class GestionTurnos extends javax.swing.JFrame {
 
     private void cargarDatos() {
         try {
-            // Cargar pacientes
-            List<Paciente> pacientes = pacienteDAO.obtenerTodos();
+            boolean esPsicologo = util.Sesion.esPsicologo();
+
+            // Cargar pacientes (un psicólogo solo ve los suyos)
+            List<Paciente> pacientes = esPsicologo
+                ? pacienteDAO.obtenerPorPsicologo(util.Sesion.getUsuarioId())
+                : pacienteDAO.obtenerTodos();
             for (Paciente p : pacientes) {
                 comboPaciente.addItem(p);
             }
 
-            // Cargar psicólogos
-            List<Usuario> psicologos = usuarioDAO.obtenerPorRol("psicologo");
-            for (Usuario u : psicologos) {
-                comboPsicologo.addItem(u);
+            // Cargar psicólogos: si el usuario logueado es psicólogo, el combo queda
+            // fijo en sí mismo (no puede asignar turnos a otro psicólogo)
+            if (esPsicologo) {
+                Usuario yo = usuarioDAO.obtenerPorId(util.Sesion.getUsuarioId());
+                if (yo != null) {
+                    comboPsicologo.addItem(yo);
+                }
+                comboPsicologo.setEnabled(false);
+            } else {
+                List<Usuario> psicologos = usuarioDAO.obtenerPorRol("psicologo");
+                for (Usuario u : psicologos) {
+                    comboPsicologo.addItem(u);
+                }
             }
 
             // Cargar turnos en tabla
@@ -143,7 +158,9 @@ public class GestionTurnos extends javax.swing.JFrame {
     private void actualizarTabla() {
         modeloTabla.setRowCount(0);
         try {
-            List<Turno> turnos = turnoDAO.obtenerTodosPendientes();
+            List<Turno> turnos = util.Sesion.esPsicologo()
+                ? turnoDAO.obtenerPendientesPorPsicologo(util.Sesion.getUsuarioId())
+                : turnoDAO.obtenerTodosPendientes();
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
             for (Turno t : turnos) {
@@ -177,7 +194,13 @@ public class GestionTurnos extends javax.swing.JFrame {
             }
 
             Turno turno = new Turno(p.getId(), u.getId(), fechaHora);
-            if (turnoDAO.crear(turno)) {
+            int nuevoId = turnoDAO.crear(turno);
+            if (nuevoId > 0) {
+                try (Connection cn = new conexion.Conexion().conectar()) {
+                    Auditoria.registrar(cn, "CREAR_TURNO", "turnos", nuevoId, null);
+                } catch (Exception ex) {
+                    System.out.println("Error registrando auditoría: " + ex.getMessage());
+                }
                 JOptionPane.showMessageDialog(this, "Turno guardado exitosamente", "Éxito", JOptionPane.INFORMATION_MESSAGE);
                 actualizarTabla();
             } else {
@@ -197,17 +220,18 @@ public class GestionTurnos extends javax.swing.JFrame {
 
         int id = (int) modeloTabla.getValueAt(fila, 0);
         if (turnoDAO.eliminar(id)) {
+            try (Connection cn = new conexion.Conexion().conectar()) {
+                Auditoria.registrar(cn, "ELIMINAR_TURNO", "turnos", id, null);
+            } catch (Exception ex) {
+                System.out.println("Error registrando auditoría: " + ex.getMessage());
+            }
             JOptionPane.showMessageDialog(this, "Turno eliminado", "Éxito", JOptionPane.INFORMATION_MESSAGE);
             actualizarTabla();
         }
     }
 
     public static void main(String[] args) {
-        try {
-            com.formdev.flatlaf.FlatLightLaf.setup();
-        } catch (Exception e) {
-            System.out.println("FlatLaf no disponible");
-        }
+        Tema.instalarLookAndFeelGuardado();
 
         SwingUtilities.invokeLater(() -> new GestionTurnos().setVisible(true));
     }

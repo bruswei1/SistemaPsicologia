@@ -141,11 +141,7 @@ public class MenuPrincipal extends javax.swing.JFrame {
     }
 
     public static void main(String args[]) {
-        try {
-            com.formdev.flatlaf.FlatLightLaf.setup();
-        } catch (Exception e) {
-            System.out.println("FlatLaf no disponible, usando Look and Feel por defecto");
-        }
+        Tema.instalarLookAndFeelGuardado();
 
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {

@@ -15,6 +15,9 @@
 # Generated patient reports (local output, not source)
 /reportes/
 
+# Preferencia de tema (claro/oscuro) por instalación local
+/tema.properties
+
 # OS files
 Thumbs.db
 .DS_Store

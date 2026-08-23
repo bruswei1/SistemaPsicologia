@@ -95,6 +95,23 @@ public final class Tema {
         return oscuro;
     }
 
+    private static final String ARCHIVO_PREFERENCIA = "tema.properties";
+
+    /**
+     * Instala el Look & Feel respetando la preferencia guardada en disco (si existe).
+     * Hay que llamar a esto en cada main(), en lugar de FlatLightLaf.setup() a secas,
+     * para que la app arranque con el tema que el usuario dejó la última vez.
+     */
+    public static void instalarLookAndFeelGuardado() {
+        oscuro = leerPreferenciaOscuro();
+        if (oscuro) {
+            FlatDarkLaf.setup();
+        } else {
+            FlatLightLaf.setup();
+        }
+        aplicarPaleta();
+    }
+
     /**
      * Alterna modo oscuro: cambia el Look & Feel real de FlatLaf (no solo la paleta propia),
      * para que campos de texto, combos, spinners, scrollbars y diálogos —que no pintamos
@@ -103,13 +120,34 @@ public final class Tema {
      */
     public static void alternarModoOscuro() {
         oscuro = !oscuro;
-        try {
-            UIManager.setLookAndFeel(oscuro ? new FlatDarkLaf() : new FlatLightLaf());
-            FlatLaf.updateUI();
-        } catch (Exception e) {
-            System.out.println("No se pudo cambiar el Look & Feel: " + e.getMessage());
+        if (oscuro) {
+            FlatDarkLaf.setup();
+        } else {
+            FlatLightLaf.setup();
         }
+        FlatLaf.updateUI();
         aplicarPaleta();
+        guardarPreferenciaOscuro();
+    }
+
+    private static boolean leerPreferenciaOscuro() {
+        java.util.Properties props = new java.util.Properties();
+        try (java.io.FileInputStream in = new java.io.FileInputStream(ARCHIVO_PREFERENCIA)) {
+            props.load(in);
+            return Boolean.parseBoolean(props.getProperty("oscuro", "false"));
+        } catch (java.io.IOException e) {
+            return false;
+        }
+    }
+
+    private static void guardarPreferenciaOscuro() {
+        java.util.Properties props = new java.util.Properties();
+        props.setProperty("oscuro", String.valueOf(oscuro));
+        try (java.io.FileOutputStream out = new java.io.FileOutputStream(ARCHIVO_PREFERENCIA)) {
+            props.store(out, "Preferencia de tema - Sistema de Psicologia");
+        } catch (java.io.IOException e) {
+            System.out.println("No se pudo guardar la preferencia de tema: " + e.getMessage());
+        }
     }
 
     private static void aplicarPaleta() {

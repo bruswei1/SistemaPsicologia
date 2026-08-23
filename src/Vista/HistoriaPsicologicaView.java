@@ -253,11 +253,7 @@ public class HistoriaPsicologicaView extends javax.swing.JFrame {
     }
 
     public static void main(String[] args) {
-        try {
-            com.formdev.flatlaf.FlatLightLaf.setup();
-        } catch (Exception e) {
-            System.out.println("FlatLaf no disponible");
-        }
+        Tema.instalarLookAndFeelGuardado();
 
         SwingUtilities.invokeLater(() -> new HistoriaPsicologicaView().setVisible(true));
     }
