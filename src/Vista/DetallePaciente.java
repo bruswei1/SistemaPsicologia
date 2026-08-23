@@ -15,20 +15,22 @@ import modelos.Usuario;
 
 public class DetallePaciente extends javax.swing.JFrame {
 
+    private final Runnable alEditar;
     private PacienteDAO pacienteDAO;
     private HistoriaPsicologicaDAO historiaDAO;
     private SesionDAO sesionDAO;
     private Paciente pacienteActual;
     private HistoriaPsicologica historiaActual;
 
-    public DetallePaciente(int pacienteId) {
+    public DetallePaciente(int pacienteId, Runnable alEditar) {
+        this.alEditar = alEditar;
         this.pacienteDAO = new PacienteDAO();
         this.historiaDAO = new HistoriaPsicologicaDAO();
         this.sesionDAO = new SesionDAO();
-        
+
         this.pacienteActual = pacienteDAO.obtenerPorId(pacienteId);
         this.historiaActual = historiaDAO.obtenerPorPaciente(pacienteId);
-        
+
         initComponents();
         cargarDatos();
         setIconImage(Tema.iconoApp());
@@ -68,7 +70,8 @@ public class DetallePaciente extends javax.swing.JFrame {
 
         JButton btnEditar = Tema.botonPrimario("Editar", Icono.EDITAR);
         btnEditar.addActionListener(e -> {
-            JOptionPane.showMessageDialog(this, "Funcionalidad en desarrollo", "Info", JOptionPane.INFORMATION_MESSAGE);
+            this.dispose();
+            alEditar.run();
         });
         footerPanel.add(btnEditar);
 
@@ -290,6 +293,6 @@ public class DetallePaciente extends javax.swing.JFrame {
     public static void main(String[] args) {
         Tema.instalarLookAndFeelGuardado();
 
-        SwingUtilities.invokeLater(() -> new DetallePaciente(1).setVisible(true));
+        SwingUtilities.invokeLater(() -> new DetallePaciente(1, () -> {}).setVisible(true));
     }
 }

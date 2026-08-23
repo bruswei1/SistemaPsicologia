@@ -4,6 +4,7 @@ import dao.*;
 import modelos.*;
 import util.*;
 import javax.swing.*;
+import javax.swing.border.TitledBorder;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.sql.Connection;
@@ -21,6 +22,8 @@ public class GestionPacientes extends javax.swing.JPanel {
     private JTextField txtTelefono;
     private JTextField txtBusqueda;
     private JComboBox<String> comboGenero;
+    private TitledBorder bordePanelRegistro;
+    private Integer pacienteIdActual;
 
     public GestionPacientes(Runnable alVolver) {
         this.alVolver = alVolver;
@@ -107,8 +110,9 @@ public class GestionPacientes extends javax.swing.JPanel {
         // Panel de registro
         JPanel panelRegistro = new JPanel();
         panelRegistro.setBackground(Tema.SUPERFICIE);
+        bordePanelRegistro = BorderFactory.createTitledBorder("Nuevo Paciente");
         panelRegistro.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createTitledBorder("Nuevo Paciente"),
+            bordePanelRegistro,
             BorderFactory.createEmptyBorder(10, 10, 10, 10)
         ));
         panelRegistro.setLayout(new GridLayout(2, 4, 10, 10));
@@ -141,10 +145,18 @@ public class GestionPacientes extends javax.swing.JPanel {
         btnGuardar.addActionListener(e -> guardarPaciente());
         panelRegistro.add(btnGuardar);
 
+        JButton btnCancelar = Tema.botonSecundario("Cancelar");
+        btnCancelar.addActionListener(e -> limpiarFormulario());
+        panelRegistro.add(btnCancelar);
+
         // Footer
         JPanel footerPanel = new JPanel();
         footerPanel.setBackground(Tema.SUPERFICIE);
         footerPanel.setLayout(new FlowLayout(FlowLayout.RIGHT, 20, 10));
+
+        JButton btnEditar = Tema.botonPrimario("Editar", Icono.EDITAR);
+        btnEditar.addActionListener(e -> editarPacienteSeleccionado());
+        footerPanel.add(btnEditar);
 
         JButton btnEliminar = Tema.botonPeligro("Eliminar", Icono.ELIMINAR);
         btnEliminar.addActionListener(e -> eliminarPaciente());
@@ -231,27 +243,86 @@ public class GestionPacientes extends javax.swing.JPanel {
 
         Tema.conCursorEspera(this, () -> {
             try {
-                Paciente paciente = new Paciente(nombre, apellido, email, telefono);
-                paciente.setGenero((String) comboGenero.getSelectedItem());
-                if (util.Sesion.esPsicologo()) {
-                    paciente.setPsicologoId(util.Sesion.getUsuarioId());
-                }
-
-                int nuevoId = pacienteDAO.crear(paciente);
-                if (nuevoId > 0) {
-                    try (Connection cn = new conexion.Conexion().conectar()) {
-                        Auditoria.registrar(cn, "CREAR_PACIENTE", "pacientes", nuevoId, null);
-                    } catch (Exception ex) {
-                        System.out.println("Error registrando auditoría: " + ex.getMessage());
+                if (pacienteIdActual != null) {
+                    Paciente paciente = pacienteDAO.obtenerPorId(pacienteIdActual);
+                    if (paciente == null) {
+                        JOptionPane.showMessageDialog(this, "El paciente ya no existe", "Error", JOptionPane.ERROR_MESSAGE);
+                        limpiarFormulario();
+                        cargarPacientes();
+                        return;
                     }
-                    JOptionPane.showMessageDialog(this, "Paciente guardado exitosamente", "Éxito", JOptionPane.INFORMATION_MESSAGE);
-                    cargarPacientes();
-                    limpiarFormulario();
+                    paciente.setNombre(nombre);
+                    paciente.setApellido(apellido);
+                    paciente.setEmail(email);
+                    paciente.setTelefono(telefono);
+                    paciente.setGenero((String) comboGenero.getSelectedItem());
+
+                    if (pacienteDAO.actualizar(paciente)) {
+                        try (Connection cn = new conexion.Conexion().conectar()) {
+                            Auditoria.registrar(cn, "EDITAR_PACIENTE", "pacientes", pacienteIdActual, null);
+                        } catch (Exception ex) {
+                            System.out.println("Error registrando auditoría: " + ex.getMessage());
+                        }
+                        JOptionPane.showMessageDialog(this, "Paciente actualizado exitosamente", "Éxito", JOptionPane.INFORMATION_MESSAGE);
+                        cargarPacientes();
+                        limpiarFormulario();
+                    } else {
+                        JOptionPane.showMessageDialog(this, "Error al actualizar el paciente", "Error", JOptionPane.ERROR_MESSAGE);
+                    }
+                } else {
+                    Paciente paciente = new Paciente(nombre, apellido, email, telefono);
+                    paciente.setGenero((String) comboGenero.getSelectedItem());
+                    if (util.Sesion.esPsicologo()) {
+                        paciente.setPsicologoId(util.Sesion.getUsuarioId());
+                    }
+
+                    int nuevoId = pacienteDAO.crear(paciente);
+                    if (nuevoId > 0) {
+                        try (Connection cn = new conexion.Conexion().conectar()) {
+                            Auditoria.registrar(cn, "CREAR_PACIENTE", "pacientes", nuevoId, null);
+                        } catch (Exception ex) {
+                            System.out.println("Error registrando auditoría: " + ex.getMessage());
+                        }
+                        JOptionPane.showMessageDialog(this, "Paciente guardado exitosamente", "Éxito", JOptionPane.INFORMATION_MESSAGE);
+                        cargarPacientes();
+                        limpiarFormulario();
+                    }
                 }
             } catch (Exception e) {
                 JOptionPane.showMessageDialog(this, "Error: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             }
         });
+    }
+
+    private void editarPacienteSeleccionado() {
+        int fila = tablaPacientes.getSelectedRow();
+        if (fila < 0) {
+            JOptionPane.showMessageDialog(this, "Seleccione un paciente", "Advertencia", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        int id = (int) modeloTabla.getValueAt(fila, 0);
+        cargarPacienteParaEditar(id);
+    }
+
+    private void cargarPacienteParaEditar(int id) {
+        Paciente paciente = pacienteDAO.obtenerPorId(id);
+        if (paciente == null) {
+            JOptionPane.showMessageDialog(this, "No se encontró el paciente", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        pacienteIdActual = id;
+        txtNombre.setText(paciente.getNombre());
+        txtApellido.setText(paciente.getApellido());
+        txtEmail.setText(paciente.getEmail());
+        txtTelefono.setText(paciente.getTelefono());
+        String genero = paciente.getGenero();
+        comboGenero.setSelectedItem(
+            ("Masculino".equals(genero) || "Femenino".equals(genero) || "Otro".equals(genero)) ? genero : "Otro");
+
+        bordePanelRegistro.setTitle("Editar Paciente: " + paciente.getNombre() + " " + paciente.getApellido());
+        repaint();
     }
 
     private void eliminarPaciente() {
@@ -265,14 +336,20 @@ public class GestionPacientes extends javax.swing.JPanel {
         int opcion = JOptionPane.showConfirmDialog(this, "¿Desea eliminar este paciente?", "Confirmación", JOptionPane.YES_NO_OPTION);
 
         if (opcion == JOptionPane.YES_OPTION) {
-            if (pacienteDAO.eliminar(id)) {
+            String error = pacienteDAO.eliminar(id);
+            if (error == null) {
                 try (Connection cn = new conexion.Conexion().conectar()) {
                     Auditoria.registrar(cn, "ELIMINAR_PACIENTE", "pacientes", id, null);
                 } catch (Exception ex) {
                     System.out.println("Error registrando auditoría: " + ex.getMessage());
                 }
                 JOptionPane.showMessageDialog(this, "Paciente eliminado", "Éxito", JOptionPane.INFORMATION_MESSAGE);
+                if (id == (pacienteIdActual != null ? pacienteIdActual : -1)) {
+                    limpiarFormulario();
+                }
                 cargarPacientes();
+            } else {
+                JOptionPane.showMessageDialog(this, error, "No se pudo eliminar", JOptionPane.ERROR_MESSAGE);
             }
         }
     }
@@ -291,18 +368,21 @@ public class GestionPacientes extends javax.swing.JPanel {
             System.out.println("Error registrando auditoría: " + ex.getMessage());
         }
 
-        DetallePaciente ventanaDetalle = new DetallePaciente(id);
+        DetallePaciente ventanaDetalle = new DetallePaciente(id, () -> cargarPacienteParaEditar(id));
         ventanaDetalle.setVisible(true);
     }
 
     private void limpiarFormulario() {
+        pacienteIdActual = null;
         txtNombre.setText("");
         txtApellido.setText("");
         txtEmail.setText("");
         txtTelefono.setText("");
         comboGenero.setSelectedIndex(0);
+        bordePanelRegistro.setTitle("Nuevo Paciente");
         Tema.marcarError(txtNombre, true);
         Tema.marcarError(txtApellido, true);
+        repaint();
     }
 
     /** Solo para probar esta pantalla de forma aislada, fuera del shell de MenuPrincipal. */

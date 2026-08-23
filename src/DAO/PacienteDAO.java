@@ -147,12 +147,13 @@ public class PacienteDAO extends DAO {
     }
 
     /**
-     * Eliminar paciente
+     * Elimina un paciente. Falla si tiene turnos, sesiones, historia clínica o
+     * documentos asociados (integridad referencial).
+     * @return null si se eliminó correctamente, o un mensaje de error listo para mostrar
      */
-    public boolean eliminar(int id) {
+    public String eliminar(int id) {
         if (id <= 0) {
-            registrarError("eliminar", new Exception("ID inválido"));
-            return false;
+            return "ID inválido.";
         }
 
         String sql = "DELETE FROM pacientes WHERE id = ?";
@@ -162,17 +163,21 @@ public class PacienteDAO extends DAO {
 
             pst.setInt(1, id);
             int filasEliminadas = pst.executeUpdate();
-            
+
             if (filasEliminadas > 0) {
                 registrarExito("Eliminar paciente ID: " + id);
-                return true;
+                return null;
             }
+            return "No se encontró el paciente.";
 
+        } catch (SQLIntegrityConstraintViolationException e) {
+            registrarError("eliminar paciente (referencias)", e);
+            return "No se puede eliminar: tiene turnos, sesiones, historia clínica o documentos asociados. "
+                + "Eliminá o reasigná esos datos primero.";
         } catch (SQLException e) {
             registrarError("eliminar paciente", e);
+            return "Error al eliminar: " + e.getMessage();
         }
-
-        return false;
     }
 
     /**
@@ -262,6 +267,62 @@ public class PacienteDAO extends DAO {
         }
 
         return pacientes;
+    }
+
+    /**
+     * Cantidad de pacientes nuevos desde una fecha (para el filtro de período del Dashboard).
+     */
+    public int contarDesde(java.time.LocalDate desde) {
+        String sql = "SELECT COUNT(*) as total FROM pacientes WHERE creado_en >= ?";
+
+        try (Connection con = obtenerConexion();
+             PreparedStatement pst = con.prepareStatement(sql)) {
+
+            pst.setDate(1, Date.valueOf(desde));
+            try (ResultSet rs = pst.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt("total");
+                }
+            }
+
+        } catch (SQLException e) {
+            registrarError("contar desde fecha", e);
+        }
+
+        return 0;
+    }
+
+    /**
+     * Pacientes nuevos agrupados por mes (yyyy-MM), para el gráfico de tendencia del Dashboard.
+     * Incluye los últimos `meses` meses aunque no tengan pacientes (quedan en 0).
+     */
+    public java.util.LinkedHashMap<String, Integer> obtenerNuevosPorMes(int meses) {
+        java.util.LinkedHashMap<String, Integer> resultado = new java.util.LinkedHashMap<>();
+        java.time.YearMonth actual = java.time.YearMonth.now();
+        for (int i = meses - 1; i >= 0; i--) {
+            resultado.put(actual.minusMonths(i).toString(), 0);
+        }
+
+        java.time.LocalDate desde = actual.minusMonths(meses - 1L).atDay(1);
+        String sql = "SELECT DATE_FORMAT(creado_en, '%Y-%m') AS mes, COUNT(*) AS total "
+            + "FROM pacientes WHERE creado_en >= ? GROUP BY mes";
+
+        try (Connection con = obtenerConexion();
+             PreparedStatement pst = con.prepareStatement(sql)) {
+
+            pst.setDate(1, Date.valueOf(desde));
+            try (ResultSet rs = pst.executeQuery()) {
+                while (rs.next()) {
+                    resultado.put(rs.getString("mes"), rs.getInt("total"));
+                }
+            }
+            registrarExito("Obtener pacientes nuevos por mes: " + resultado.size() + " meses");
+
+        } catch (SQLException e) {
+            registrarError("obtener nuevos por mes", e);
+        }
+
+        return resultado;
     }
 
     /**
