@@ -23,6 +23,7 @@ public class MenuPrincipal extends javax.swing.JFrame {
     private HistoriaPsicologicaView panelHistoria;
     private Dashboard panelDashboard;
     private Agenda panelAgenda;
+    private Configuracion panelConfiguracion;
 
     public MenuPrincipal() {
         construirVentana();
@@ -59,6 +60,7 @@ public class MenuPrincipal extends javax.swing.JFrame {
         panelHistoria = null;
         panelDashboard = null;
         panelAgenda = null;
+        panelConfiguracion = null;
 
         cardLayout = new CardLayout();
         contenedor = new JPanel(cardLayout);
@@ -130,7 +132,7 @@ public class MenuPrincipal extends javax.swing.JFrame {
     private JPanel crearGridOpciones() {
         JPanel panelContent = new JPanel();
         panelContent.setBackground(Tema.FONDO);
-        panelContent.setLayout(new GridLayout(2, 3, 30, 30));
+        panelContent.setLayout(new GridLayout(2, 4, 30, 30));
         panelContent.setBorder(BorderFactory.createEmptyBorder(
             Tema.ESPACIADO_GRANDE, 50, Tema.ESPACIADO_GRANDE, 50));
 
@@ -157,6 +159,10 @@ public class MenuPrincipal extends javax.swing.JFrame {
         panelContent.add(new TarjetaMenu(Icono.AGENDA, Tema.ACENTO_ROSA,
             "Agenda", "Ver agenda de citas\npróximas",
             this::mostrarAgenda));
+
+        panelContent.add(new TarjetaMenu(Icono.CONFIGURACION, Tema.ACENTO_GRIS,
+            "Configuración", "Cuenta, contraseña\ny usuarios",
+            this::mostrarConfiguracion));
 
         return panelContent;
     }
@@ -237,6 +243,22 @@ public class MenuPrincipal extends javax.swing.JFrame {
             panelAgenda.refrescar();
         }
         cardLayout.show(contenedor, "agenda");
+    }
+
+    private void mostrarConfiguracion() {
+        if (panelConfiguracion == null) {
+            panelConfiguracion = new Configuracion(this::mostrarInicio, this::cerrarSesion);
+            contenedor.add(panelConfiguracion, "configuracion");
+        } else {
+            panelConfiguracion.refrescar();
+        }
+        cardLayout.show(contenedor, "configuracion");
+    }
+
+    private void cerrarSesion() {
+        util.Sesion.cerrar();
+        dispose();
+        new Login().setVisible(true);
     }
 
     public static void main(String args[]) {

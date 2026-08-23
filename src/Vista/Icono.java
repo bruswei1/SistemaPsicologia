@@ -220,6 +220,30 @@ public enum Icono {
             g2.drawLine(cx - (int) (size * 0.08), ay2 - (int) (size * 0.08), cx, ay2);
             g2.drawLine(cx + (int) (size * 0.08), ay2 - (int) (size * 0.08), cx, ay2);
         }
+    },
+
+    CONFIGURACION {
+        public void dibujar(Graphics2D g2, int x, int y, int size, Color color) {
+            g2.setColor(color);
+            int cx = x + size / 2;
+            int cy = y + size / 2;
+
+            int rAnillo = (int) (size * 0.24);
+            g2.setStroke(new BasicStroke(Math.max(2f, size * 0.14f)));
+            g2.drawOval(cx - rAnillo, cy - rAnillo, rAnillo * 2, rAnillo * 2);
+
+            g2.setStroke(new BasicStroke(Math.max(2f, size * 0.11f)));
+            int rInterno = (int) (size * 0.36);
+            int rExterno = (int) (size * 0.48);
+            for (int i = 0; i < 8; i++) {
+                double angulo = Math.toRadians(i * 45);
+                int x1 = cx + (int) (rInterno * Math.cos(angulo));
+                int y1 = cy + (int) (rInterno * Math.sin(angulo));
+                int x2 = cx + (int) (rExterno * Math.cos(angulo));
+                int y2 = cy + (int) (rExterno * Math.sin(angulo));
+                g2.drawLine(x1, y1, x2, y2);
+            }
+        }
     };
 
     public abstract void dibujar(Graphics2D g2, int x, int y, int size, Color color);

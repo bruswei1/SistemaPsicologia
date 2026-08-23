@@ -165,6 +165,125 @@ public class UsuarioDAO extends DAO {
     }
 
     /**
+     * Crear un nuevo usuario, generando salt+hash a partir de la contraseña en texto plano.
+     * @return el ID generado, o -1 si falló
+     */
+    public int crear(String usuario, String nombre, String passwordPlano, String rol) {
+        if (usuario == null || usuario.trim().isEmpty() || nombre == null || nombre.trim().isEmpty()
+                || passwordPlano == null || passwordPlano.isEmpty() || rol == null || rol.isEmpty()) {
+            registrarError("crear", new Exception("Datos de usuario incompletos"));
+            return -1;
+        }
+
+        String salt = PasswordUtil.generarSalt();
+        String hash = PasswordUtil.hash(passwordPlano, salt);
+
+        String sql = "INSERT INTO usuarios (usuario, password_hash, salt, nombre, rol, activo) VALUES (?, ?, ?, ?, ?, 1)";
+
+        try (Connection con = obtenerConexion();
+             PreparedStatement pst = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+
+            pst.setString(1, usuario.trim());
+            pst.setString(2, hash);
+            pst.setString(3, salt);
+            pst.setString(4, nombre.trim());
+            pst.setString(5, rol);
+
+            pst.executeUpdate();
+            registrarExito("Crear usuario: " + usuario);
+
+            try (ResultSet keys = pst.getGeneratedKeys()) {
+                return keys.next() ? keys.getInt(1) : -1;
+            }
+
+        } catch (SQLException e) {
+            registrarError("crear usuario", e);
+            return -1;
+        }
+    }
+
+    /**
+     * Cambia la contraseña de un usuario, regenerando salt+hash.
+     */
+    public boolean cambiarPassword(int usuarioId, String passwordPlano) {
+        if (usuarioId <= 0 || passwordPlano == null || passwordPlano.isEmpty()) {
+            registrarError("cambiarPassword", new Exception("Datos inválidos"));
+            return false;
+        }
+
+        String salt = PasswordUtil.generarSalt();
+        String hash = PasswordUtil.hash(passwordPlano, salt);
+
+        String sql = "UPDATE usuarios SET password_hash=?, salt=? WHERE id=?";
+
+        try (Connection con = obtenerConexion();
+             PreparedStatement pst = con.prepareStatement(sql)) {
+
+            pst.setString(1, hash);
+            pst.setString(2, salt);
+            pst.setInt(3, usuarioId);
+
+            boolean ok = pst.executeUpdate() > 0;
+            if (ok) {
+                registrarExito("Cambiar contraseña usuario ID: " + usuarioId);
+            }
+            return ok;
+
+        } catch (SQLException e) {
+            registrarError("cambiar contraseña", e);
+            return false;
+        }
+    }
+
+    /**
+     * Activa/desactiva una cuenta (baja lógica, no se borra el usuario).
+     */
+    public boolean actualizarActivo(int usuarioId, boolean activo) {
+        String sql = "UPDATE usuarios SET activo=? WHERE id=?";
+
+        try (Connection con = obtenerConexion();
+             PreparedStatement pst = con.prepareStatement(sql)) {
+
+            pst.setBoolean(1, activo);
+            pst.setInt(2, usuarioId);
+
+            boolean ok = pst.executeUpdate() > 0;
+            if (ok) {
+                registrarExito((activo ? "Activar" : "Desactivar") + " usuario ID: " + usuarioId);
+            }
+            return ok;
+
+        } catch (SQLException e) {
+            registrarError("actualizar activo", e);
+            return false;
+        }
+    }
+
+    /**
+     * Cambia el rol de un usuario.
+     */
+    public boolean actualizarRol(int usuarioId, String rol) {
+        String sql = "UPDATE usuarios SET rol=? WHERE id=?";
+
+        try (Connection con = obtenerConexion();
+             PreparedStatement pst = con.prepareStatement(sql)) {
+
+            pst.setString(1, rol);
+            pst.setInt(2, usuarioId);
+
+            boolean ok = pst.executeUpdate() > 0;
+            if (ok) {
+                registrarExito("Actualizar rol usuario ID: " + usuarioId + " -> " + rol);
+            }
+            return ok;
+
+        } catch (SQLException e) {
+            registrarError("actualizar rol", e);
+            return false;
+        }
+    }
+
+    /**
      * Mapear ResultSet a objeto Usuario
      */
     private Usuario mapearUsuario(ResultSet rs) throws SQLException {
@@ -173,6 +292,7 @@ public class UsuarioDAO extends DAO {
         u.setNombre(rs.getString("nombre"));
         u.setUsuario(rs.getString("usuario"));
         u.setRol(rs.getString("rol"));
+        u.setActivo(rs.getBoolean("activo"));
         return u;
     }
 }

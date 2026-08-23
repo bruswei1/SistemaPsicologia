@@ -64,6 +64,7 @@ public final class Tema {
     public static final Acento ACENTO_AMBAR = new Acento(new Color(254, 240, 199), new Color(202, 113, 6));
     public static final Acento ACENTO_CELESTE = new Acento(new Color(207, 241, 255), new Color(2, 132, 199));
     public static final Acento ACENTO_ROSA = new Acento(new Color(255, 224, 235), new Color(219, 39, 119));
+    public static final Acento ACENTO_GRIS = new Acento(new Color(226, 230, 236), new Color(71, 85, 105));
 
     public static final class Acento {
         public final Color insignia;
