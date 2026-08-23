@@ -10,7 +10,6 @@ import java.sql.ResultSet;
 import java.sql.Types;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
-import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -24,7 +23,9 @@ import javax.swing.table.DefaultTableModel;
 import util.Auditoria;
 import util.Sesion;
 
-public class Sesiones extends JFrame {
+public class Sesiones extends JPanel {
+
+    private final Runnable alVolver;
 
     private JComboBox<PacienteItem> cmbPaciente;
     private JTextArea txtSubjetivo;
@@ -45,17 +46,18 @@ public class Sesiones extends JFrame {
 
     private Integer sesionIdActual;
 
-    public Sesiones() {
-        setTitle("Notas de Sesión (SOAP)");
-        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        setIconImage(Tema.iconoApp());
+    public Sesiones(Runnable alVolver) {
+        this.alVolver = alVolver;
         initComponents();
         cargarPacientes();
-        setSize(820, 640);
-        setLocationRelativeTo(null);
+    }
+
+    public void refrescar() {
+        cargarPacientes();
     }
 
     private void initComponents() {
+        setLayout(new BorderLayout(8, 8));
 
         cmbPaciente = new JComboBox<>();
         cmbPaciente.addActionListener(evt -> {
@@ -135,9 +137,8 @@ public class Sesiones extends JFrame {
         JSplitPane split = new JSplitPane(JSplitPane.VERTICAL_SPLIT, panelFormulario, scrollTabla);
         split.setResizeWeight(0.72);
 
-        getContentPane().setLayout(new BorderLayout(8, 8));
-        getContentPane().add(split, BorderLayout.CENTER);
-        getContentPane().add(panelBotones, BorderLayout.SOUTH);
+        add(split, BorderLayout.CENTER);
+        add(panelBotones, BorderLayout.SOUTH);
     }
 
     private JPanel campoSoap(String etiqueta, JTextArea area) {
@@ -388,9 +389,7 @@ public class Sesiones extends JFrame {
         if (timer != null) {
             timer.stop();
         }
-        MenuPrincipal menu = new MenuPrincipal();
-        menu.setVisible(true);
-        this.dispose();
+        alVolver.run();
     }
 
     private static class PacienteItem {

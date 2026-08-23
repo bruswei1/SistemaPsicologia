@@ -9,8 +9,9 @@ import java.awt.*;
 import java.sql.Connection;
 import java.util.List;
 
-public class GestionPacientes extends javax.swing.JFrame {
+public class GestionPacientes extends javax.swing.JPanel {
 
+    private final Runnable alVolver;
     private PacienteDAO pacienteDAO;
     private JTable tablaPacientes;
     private DefaultTableModel modeloTabla;
@@ -21,18 +22,20 @@ public class GestionPacientes extends javax.swing.JFrame {
     private JTextField txtBusqueda;
     private JSpinner spinnerFecha;
 
-    public GestionPacientes() {
+    public GestionPacientes(Runnable alVolver) {
+        this.alVolver = alVolver;
         this.pacienteDAO = new PacienteDAO();
         initComponents();
         cargarPacientes();
-        setIconImage(Tema.iconoApp());
-        setLocationRelativeTo(null);
-        setDefaultCloseOperation(EXIT_ON_CLOSE);
+    }
+
+    /** Recarga los datos; MenuPrincipal la llama cada vez que se navega a esta pantalla. */
+    public void refrescar() {
+        cargarPacientes();
     }
 
     private void initComponents() {
-        setSize(1400, 800);
-        setTitle("Gestión de Pacientes - Sistema de Psicología");
+        setLayout(new BorderLayout());
 
         JPanel mainPanel = new JPanel();
         mainPanel.setBackground(Tema.FONDO);
@@ -148,22 +151,16 @@ public class GestionPacientes extends javax.swing.JFrame {
         footerPanel.add(btnEliminar);
 
         JButton btnVolver = Tema.botonSecundario("Volver", Icono.VOLVER);
-        btnVolver.addActionListener(e -> volverAlMenu());
+        btnVolver.addActionListener(e -> alVolver.run());
         footerPanel.add(btnVolver);
-        Tema.atajoEscape(this, btnVolver, this::volverAlMenu);
+        Tema.atajoEscape(this, btnVolver, alVolver);
 
         JPanel panelSur = new JPanel(new BorderLayout());
         panelSur.add(panelRegistro, BorderLayout.CENTER);
         panelSur.add(footerPanel, BorderLayout.SOUTH);
         mainPanel.add(panelSur, BorderLayout.SOUTH);
 
-        getContentPane().add(mainPanel);
-    }
-
-    private void volverAlMenu() {
-        this.dispose();
-        MenuPrincipal menu = new MenuPrincipal();
-        menu.setVisible(true);
+        add(mainPanel, BorderLayout.CENTER);
     }
 
     private void cargarPacientes() {
@@ -306,9 +303,18 @@ public class GestionPacientes extends javax.swing.JFrame {
         Tema.marcarError(txtApellido, true);
     }
 
+    /** Solo para probar esta pantalla de forma aislada, fuera del shell de MenuPrincipal. */
     public static void main(String[] args) {
         Tema.instalarLookAndFeelGuardado();
 
-        SwingUtilities.invokeLater(() -> new GestionPacientes().setVisible(true));
+        SwingUtilities.invokeLater(() -> {
+            JFrame f = new JFrame("Gestión de Pacientes (prueba aislada)");
+            f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            f.setIconImage(Tema.iconoApp());
+            f.getContentPane().add(new GestionPacientes(() -> System.exit(0)));
+            f.setSize(1400, 800);
+            f.setLocationRelativeTo(null);
+            f.setVisible(true);
+        });
     }
 }

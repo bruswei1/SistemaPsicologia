@@ -11,8 +11,9 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
-public class GestionTurnos extends javax.swing.JFrame {
+public class GestionTurnos extends javax.swing.JPanel {
 
+    private final Runnable alVolver;
     private TurnoDAO turnoDAO;
     private PacienteDAO pacienteDAO;
     private UsuarioDAO usuarioDAO;
@@ -22,21 +23,22 @@ public class GestionTurnos extends javax.swing.JFrame {
     private JComboBox<Usuario> comboPsicologo;
     private JSpinner spinnerFechaHora;
 
-    public GestionTurnos() {
+    public GestionTurnos(Runnable alVolver) {
+        this.alVolver = alVolver;
         this.turnoDAO = new TurnoDAO();
         this.pacienteDAO = new PacienteDAO();
         this.usuarioDAO = new UsuarioDAO();
 
         initComponents();
         cargarDatos();
-        setIconImage(Tema.iconoApp());
-        setLocationRelativeTo(null);
-        setDefaultCloseOperation(EXIT_ON_CLOSE);
+    }
+
+    public void refrescar() {
+        cargarDatos();
     }
 
     private void initComponents() {
-        setSize(1200, 700);
-        setTitle("Gestión de Turnos - Sistema de Psicología");
+        setLayout(new BorderLayout());
 
         JPanel mainPanel = new JPanel();
         mainPanel.setBackground(Tema.FONDO);
@@ -108,22 +110,19 @@ public class GestionTurnos extends javax.swing.JFrame {
         footerPanel.add(btnEliminar);
 
         JButton btnVolver = Tema.botonSecundario("Volver", Icono.VOLVER);
-        btnVolver.addActionListener(e -> volverAlMenu());
+        btnVolver.addActionListener(e -> alVolver.run());
         footerPanel.add(btnVolver);
-        Tema.atajoEscape(this, btnVolver, this::volverAlMenu);
+        Tema.atajoEscape(this, btnVolver, alVolver);
 
         mainPanel.add(footerPanel, BorderLayout.SOUTH);
 
-        getContentPane().add(mainPanel);
-    }
-
-    private void volverAlMenu() {
-        this.dispose();
-        MenuPrincipal menu = new MenuPrincipal();
-        menu.setVisible(true);
+        add(mainPanel, BorderLayout.CENTER);
     }
 
     private void cargarDatos() {
+        comboPaciente.removeAllItems();
+        comboPsicologo.removeAllItems();
+        comboPsicologo.setEnabled(true);
         try {
             boolean esPsicologo = util.Sesion.esPsicologo();
 
@@ -236,9 +235,18 @@ public class GestionTurnos extends javax.swing.JFrame {
         }
     }
 
+    /** Solo para probar esta pantalla de forma aislada, fuera del shell de MenuPrincipal. */
     public static void main(String[] args) {
         Tema.instalarLookAndFeelGuardado();
 
-        SwingUtilities.invokeLater(() -> new GestionTurnos().setVisible(true));
+        SwingUtilities.invokeLater(() -> {
+            JFrame f = new JFrame("Gestión de Turnos (prueba aislada)");
+            f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            f.setIconImage(Tema.iconoApp());
+            f.getContentPane().add(new GestionTurnos(() -> System.exit(0)));
+            f.setSize(1200, 700);
+            f.setLocationRelativeTo(null);
+            f.setVisible(true);
+        });
     }
 }

@@ -4,28 +4,28 @@ import dao.*;
 import javax.swing.*;
 import java.awt.*;
 
-public class Dashboard extends javax.swing.JFrame {
+public class Dashboard extends javax.swing.JPanel {
 
+    private final Runnable alVolver;
     private TarjetaEstadistica lblPacientes;
     private TarjetaEstadistica lblSesiones;
     private TarjetaEstadistica lblTurnos;
     private TarjetaEstadistica lblPsicologos;
     private GraficoBarras grafico;
 
-    public Dashboard() {
-        setSize(1200, 800);
-        setTitle("Dashboard - Sistema de Psicología");
-        setDefaultCloseOperation(EXIT_ON_CLOSE);
-        setIconImage(Tema.iconoApp());
-        setLocationRelativeTo(null);
-
+    public Dashboard(Runnable alVolver) {
+        this.alVolver = alVolver;
         initComponents();
         cargarDatos();
+    }
 
-        setVisible(true);
+    public void refrescar() {
+        cargarDatos();
     }
 
     private void initComponents() {
+        setLayout(new BorderLayout());
+
         JPanel mainPanel = new JPanel();
         mainPanel.setBackground(Tema.FONDO);
         mainPanel.setLayout(new BorderLayout(10, 10));
@@ -95,18 +95,12 @@ public class Dashboard extends javax.swing.JFrame {
         footerPanel.setLayout(new FlowLayout(FlowLayout.RIGHT, 20, 15));
 
         JButton btnVolver = Tema.botonPrimario("Volver", Icono.VOLVER);
-        btnVolver.addActionListener(e -> volverAlMenu());
+        btnVolver.addActionListener(e -> alVolver.run());
         footerPanel.add(btnVolver);
-        Tema.atajoEscape(this, btnVolver, this::volverAlMenu);
+        Tema.atajoEscape(this, btnVolver, alVolver);
 
         mainPanel.add(footerPanel, BorderLayout.SOUTH);
-        getContentPane().add(mainPanel);
-    }
-
-    private void volverAlMenu() {
-        this.dispose();
-        MenuPrincipal menu = new MenuPrincipal();
-        menu.setVisible(true);
+        add(mainPanel, BorderLayout.CENTER);
     }
 
     private void cargarDatos() {
@@ -143,10 +137,19 @@ public class Dashboard extends javax.swing.JFrame {
         worker.execute();
     }
 
+    /** Solo para probar esta pantalla de forma aislada, fuera del shell de MenuPrincipal. */
     public static void main(String[] args) {
         Tema.instalarLookAndFeelGuardado();
 
-        SwingUtilities.invokeLater(() -> new Dashboard());
+        SwingUtilities.invokeLater(() -> {
+            JFrame f = new JFrame("Dashboard (prueba aislada)");
+            f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            f.setIconImage(Tema.iconoApp());
+            f.getContentPane().add(new Dashboard(() -> System.exit(0)));
+            f.setSize(1200, 800);
+            f.setLocationRelativeTo(null);
+            f.setVisible(true);
+        });
     }
 
     private static class TarjetaEstadistica extends JPanel {

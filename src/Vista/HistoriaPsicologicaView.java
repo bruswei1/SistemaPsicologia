@@ -6,8 +6,9 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.List;
 
-public class HistoriaPsicologicaView extends javax.swing.JFrame {
+public class HistoriaPsicologicaView extends javax.swing.JPanel {
 
+    private final Runnable alVolver;
     private HistoriaPsicologicaDAO historiaDAO;
     private PacienteDAO pacienteDAO;
     private JComboBox<Paciente> comboPaciente;
@@ -18,20 +19,21 @@ public class HistoriaPsicologicaView extends javax.swing.JFrame {
     private JTextArea txtTratamiento;
     private JLabel lblUltimaActualizacion;
 
-    public HistoriaPsicologicaView() {
+    public HistoriaPsicologicaView(Runnable alVolver) {
+        this.alVolver = alVolver;
         this.historiaDAO = new HistoriaPsicologicaDAO();
         this.pacienteDAO = new PacienteDAO();
-        
+
         initComponents();
         cargarPacientes();
-        setIconImage(Tema.iconoApp());
-        setLocationRelativeTo(null);
-        setDefaultCloseOperation(EXIT_ON_CLOSE);
+    }
+
+    public void refrescar() {
+        cargarPacientes();
     }
 
     private void initComponents() {
-        setSize(1000, 800);
-        setTitle("Historia Psicológica - Sistema de Psicología");
+        setLayout(new BorderLayout());
 
         JPanel mainPanel = new JPanel();
         mainPanel.setBackground(Tema.FONDO);
@@ -128,22 +130,17 @@ public class HistoriaPsicologicaView extends javax.swing.JFrame {
         footerPanel.add(btnExportar);
 
         JButton btnVolver = Tema.botonSecundario("Volver", Icono.VOLVER);
-        btnVolver.addActionListener(e -> volverAlMenu());
+        btnVolver.addActionListener(e -> alVolver.run());
         footerPanel.add(btnVolver);
-        Tema.atajoEscape(this, btnVolver, this::volverAlMenu);
+        Tema.atajoEscape(this, btnVolver, alVolver);
 
         mainPanel.add(footerPanel, BorderLayout.SOUTH);
 
-        getContentPane().add(mainPanel);
-    }
-
-    private void volverAlMenu() {
-        this.dispose();
-        MenuPrincipal menu = new MenuPrincipal();
-        menu.setVisible(true);
+        add(mainPanel, BorderLayout.CENTER);
     }
 
     private void cargarPacientes() {
+        comboPaciente.removeAllItems();
         try {
             List<Paciente> pacientes = pacienteDAO.obtenerTodos();
             for (Paciente p : pacientes) {
@@ -257,9 +254,18 @@ public class HistoriaPsicologicaView extends javax.swing.JFrame {
         }
     }
 
+    /** Solo para probar esta pantalla de forma aislada, fuera del shell de MenuPrincipal. */
     public static void main(String[] args) {
         Tema.instalarLookAndFeelGuardado();
 
-        SwingUtilities.invokeLater(() -> new HistoriaPsicologicaView().setVisible(true));
+        SwingUtilities.invokeLater(() -> {
+            JFrame f = new JFrame("Historia Psicológica (prueba aislada)");
+            f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            f.setIconImage(Tema.iconoApp());
+            f.getContentPane().add(new HistoriaPsicologicaView(() -> System.exit(0)));
+            f.setSize(1000, 800);
+            f.setLocationRelativeTo(null);
+            f.setVisible(true);
+        });
     }
 }

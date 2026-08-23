@@ -6,10 +6,8 @@ import com.formdev.flatlaf.FlatLightLaf;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JComponent;
-import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JRootPane;
 import javax.swing.JTable;
 import javax.swing.KeyStroke;
 import javax.swing.SwingConstants;
@@ -301,8 +299,21 @@ public final class Tema {
         };
     }
 
-    /** Ejecuta `accion` mostrando el cursor de espera mientras dura (consultas a la BD en el hilo de UI). */
-    public static void conCursorEspera(java.awt.Window ventana, Runnable accion) {
+    /**
+     * Ejecuta `accion` mostrando el cursor de espera mientras dura (consultas a la BD en el hilo
+     * de UI). Acepta cualquier componente (panel o frame): busca la ventana real que lo contiene
+     * en ese momento, ya que las pantallas ahora son paneles dentro de un único JFrame.
+     */
+    public static void conCursorEspera(java.awt.Component ancla, Runnable accion) {
+        java.awt.Window ventana = ancla instanceof java.awt.Window
+            ? (java.awt.Window) ancla
+            : javax.swing.SwingUtilities.getWindowAncestor(ancla);
+
+        if (ventana == null) {
+            accion.run();
+            return;
+        }
+
         Cursor anterior = ventana.getCursor();
         ventana.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
         try {
@@ -313,12 +324,14 @@ public final class Tema {
     }
 
     /**
-     * Liga la tecla Esc, en cualquier parte de la ventana, a `accion` (típicamente "Volver"/"Cerrar").
-     * Además agrega "(Esc)" al tooltip del botón correspondiente para que el atajo sea descubrible.
+     * Liga la tecla Esc, en cualquier parte de la ventana que contenga a `ancla`, a `accion`
+     * (típicamente "Volver"/"Cerrar"). Funciona tanto si `ancla` es un panel que todavía no se
+     * agregó a ninguna ventana (WHEN_IN_FOCUSED_WINDOW se resuelve en el momento del evento, no
+     * al registrar) como si es el rootPane de un JFrame. Además agrega "(Esc)" al tooltip del
+     * botón correspondiente para que el atajo sea descubrible.
      */
-    public static void atajoEscape(JFrame ventana, JButton botonAsociado, Runnable accion) {
-        JRootPane root = ventana.getRootPane();
-        root.registerKeyboardAction(
+    public static void atajoEscape(JComponent ancla, JButton botonAsociado, Runnable accion) {
+        ancla.registerKeyboardAction(
             e -> accion.run(),
             KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0),
             JComponent.WHEN_IN_FOCUSED_WINDOW

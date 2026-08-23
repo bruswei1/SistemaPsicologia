@@ -75,7 +75,7 @@ public class DetallePaciente extends javax.swing.JFrame {
         JButton btnCerrar = Tema.botonSecundario("Cerrar", Icono.VOLVER);
         btnCerrar.addActionListener(e -> this.dispose());
         footerPanel.add(btnCerrar);
-        Tema.atajoEscape(this, btnCerrar, this::dispose);
+        Tema.atajoEscape(getRootPane(), btnCerrar, this::dispose);
 
         mainPanel.add(footerPanel, BorderLayout.SOUTH);
 

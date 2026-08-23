@@ -15,7 +15,6 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
-import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -27,10 +26,12 @@ import javax.swing.table.DefaultTableModel;
 import util.Auditoria;
 import util.Sesion;
 
-public class Agenda extends JFrame {
+public class Agenda extends JPanel {
 
     private static final DateTimeFormatter FORMATO_FECHA = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
     private static final String[] ESTADOS = {"programado", "completado", "cancelado", "ausente"};
+
+    private final Runnable alVolver;
 
     private JComboBox<PacienteItem> cmbPaciente;
     private JComboBox<PsicologoItem> cmbPsicologo;
@@ -44,19 +45,22 @@ public class Agenda extends JFrame {
 
     private Integer turnoIdActual;
 
-    public Agenda() {
-        setTitle("Agenda de Turnos");
-        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        setIconImage(Tema.iconoApp());
+    public Agenda(Runnable alVolver) {
+        this.alVolver = alVolver;
         initComponents();
         cargarPacientes();
         cargarPsicologos();
         cargarTurnos();
-        setSize(760, 600);
-        setLocationRelativeTo(null);
+    }
+
+    public void refrescar() {
+        cargarPacientes();
+        cargarPsicologos();
+        cargarTurnos();
     }
 
     private void initComponents() {
+        setLayout(new BorderLayout(8, 8));
 
         JPanel panelForm = new JPanel(new GridBagLayout());
         panelForm.setBackground(Tema.SUPERFICIE);
@@ -88,8 +92,8 @@ public class Agenda extends JFrame {
         btnNuevo.addActionListener(evt -> limpiarCampos());
 
         JButton btnVolver = Tema.botonSecundario("Volver al menú", Icono.VOLVER);
-        btnVolver.addActionListener(evt -> volverAlMenu());
-        Tema.atajoEscape(this, btnVolver, this::volverAlMenu);
+        btnVolver.addActionListener(evt -> alVolver.run());
+        Tema.atajoEscape(this, btnVolver, alVolver);
 
         JPanel panelBotones = new JPanel();
         panelBotones.setBackground(Tema.SUPERFICIE);
@@ -118,9 +122,8 @@ public class Agenda extends JFrame {
         panelSuperior.add(panelForm, BorderLayout.CENTER);
         panelSuperior.add(panelBotones, BorderLayout.SOUTH);
 
-        getContentPane().setLayout(new BorderLayout(8, 8));
-        getContentPane().add(panelSuperior, BorderLayout.NORTH);
-        getContentPane().add(scrollTabla, BorderLayout.CENTER);
+        add(panelSuperior, BorderLayout.NORTH);
+        add(scrollTabla, BorderLayout.CENTER);
     }
 
     private void agregarCampo(JPanel panel, GridBagConstraints gbc, int fila, String etiqueta, java.awt.Component campo) {
@@ -383,12 +386,6 @@ public class Agenda extends JFrame {
         cmbDuracion.setSelectedItem("45");
         cmbEstado.setSelectedItem("programado");
         txtNotas.setText("");
-    }
-
-    private void volverAlMenu() {
-        MenuPrincipal menu = new MenuPrincipal();
-        menu.setVisible(true);
-        this.dispose();
     }
 
     private static class PacienteItem {
