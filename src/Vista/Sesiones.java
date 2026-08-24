@@ -61,6 +61,8 @@ public class Sesiones extends JPanel {
 
     private void initComponents() {
         setLayout(new BorderLayout(8, 8));
+        add(Tema.panelEncabezado("Atenciones Psicológicas", "Registro de atenciones (SOAP) por estudiante"),
+            BorderLayout.NORTH);
 
         cmbPaciente = new JComboBox<>();
         cmbPaciente.addActionListener(evt -> {
@@ -74,7 +76,7 @@ public class Sesiones extends JPanel {
         lblCronometro = new JLabel("00:00");
         lblCronometro.setFont(new Font("Segoe UI", Font.BOLD, 18));
         lblCronometro.setForeground(Tema.PRIMARIO);
-        btnIniciar = Tema.botonExito("Iniciar sesión");
+        btnIniciar = Tema.botonExito("Iniciar atención");
         btnDetener = Tema.botonPeligro("Pausar");
         btnDetener.setEnabled(false);
         btnIniciar.addActionListener(evt -> iniciarCronometro());
@@ -89,13 +91,13 @@ public class Sesiones extends JPanel {
 
         JPanel panelPaciente = new JPanel(new BorderLayout(4, 4));
         panelPaciente.setBackground(Tema.SUPERFICIE);
-        panelPaciente.add(new JLabel("Paciente*: "), BorderLayout.WEST);
+        panelPaciente.add(new JLabel("Estudiante*: "), BorderLayout.WEST);
         panelPaciente.add(cmbPaciente, BorderLayout.CENTER);
         panelPaciente.add(panelCronometro, BorderLayout.EAST);
 
         JPanel panelTurno = new JPanel(new BorderLayout(4, 4));
         panelTurno.setBackground(Tema.SUPERFICIE);
-        panelTurno.add(new JLabel("Turno asociado (opcional): "), BorderLayout.WEST);
+        panelTurno.add(new JLabel("Cita asociada (opcional): "), BorderLayout.WEST);
         panelTurno.add(cmbTurno, BorderLayout.CENTER);
 
         JPanel panelPacienteYTurno = new JPanel();
@@ -111,17 +113,17 @@ public class Sesiones extends JPanel {
         txtNotasPrivadas = new JTextArea(4, 20);
 
         JPanel panelSoap = new JPanel(new GridLayout(2, 2, 6, 6));
-        panelSoap.add(campoSoap("Subjetivo", txtSubjetivo));
-        panelSoap.add(campoSoap("Objetivo", txtObjetivo));
-        panelSoap.add(campoSoap("Análisis", txtAnalisis));
-        panelSoap.add(campoSoap("Plan", txtPlan));
+        panelSoap.add(campoSoap("Relato del estudiante (Subjetivo)", txtSubjetivo));
+        panelSoap.add(campoSoap("Observación profesional (Objetivo)", txtObjetivo));
+        panelSoap.add(campoSoap("Análisis de la situación", txtAnalisis));
+        panelSoap.add(campoSoap("Acuerdos y recomendaciones (Plan)", txtPlan));
 
-        JPanel panelPrivado = campoSoap("Notas privadas (no forman parte del informe)", txtNotasPrivadas);
+        JPanel panelPrivado = campoSoap("Seguimiento y notas privadas (uso interno, no forman parte del informe)", txtNotasPrivadas);
 
-        JButton btnGuardar = Tema.botonExito("Guardar sesión", Icono.GUARDAR);
+        JButton btnGuardar = Tema.botonExito("Guardar atención", Icono.GUARDAR);
         btnGuardar.addActionListener(evt -> guardarSesion());
 
-        JButton btnNueva = Tema.botonPrimario("Nueva sesión", Icono.NUEVO);
+        JButton btnNueva = Tema.botonPrimario("Nueva atención", Icono.NUEVO);
         btnNueva.addActionListener(evt -> limpiarFormularioSesion());
 
         JButton btnExportar = Tema.botonPrimario("Exportar nota", Icono.EXPORTAR);
@@ -154,7 +156,7 @@ public class Sesiones extends JPanel {
         Tema.estilizarTabla(tablaSesiones);
         tablaSesiones.getSelectionModel().addListSelectionListener(this::onSeleccionarSesion);
         JScrollPane scrollTabla = new JScrollPane(tablaSesiones);
-        scrollTabla.setBorder(javax.swing.BorderFactory.createTitledBorder("Sesiones registradas"));
+        scrollTabla.setBorder(Tema.tituloSeccion("Atenciones registradas"));
 
         JSplitPane split = new JSplitPane(JSplitPane.VERTICAL_SPLIT, panelFormulario, scrollTabla);
         split.setResizeWeight(0.72);
@@ -195,7 +197,7 @@ public class Sesiones extends JPanel {
 
         cmbPaciente.removeAllItems();
 
-        String sql = "SELECT id, nombre, apellido FROM pacientes ";
+        String sql = "SELECT id, nombre, apellido, curso FROM pacientes ";
         if (Sesion.esPsicologo()) {
             sql += "WHERE psicologo_id = ? ";
         }
@@ -210,12 +212,13 @@ public class Sesiones extends JPanel {
 
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    cmbPaciente.addItem(new PacienteItem(rs.getInt("id"), rs.getString("nombre") + " " + rs.getString("apellido")));
+                    cmbPaciente.addItem(new PacienteItem(rs.getInt("id"),
+                        rs.getString("nombre") + " " + rs.getString("apellido"), rs.getString("curso")));
                 }
             }
 
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Error al cargar pacientes: " + e.getMessage());
+            JOptionPane.showMessageDialog(this, "Error al cargar estudiantes: " + e.getMessage());
         }
     }
 
@@ -226,7 +229,7 @@ public class Sesiones extends JPanel {
 
     private void cargarTurnosDelPaciente() {
         cmbTurno.removeAllItems();
-        cmbTurno.addItem(new TurnoItem(null, "(Sin turno asociado)"));
+        cmbTurno.addItem(new TurnoItem(null, "(Sin cita asociada)"));
 
         Integer pacienteId = pacienteSeleccionadoId();
         if (pacienteId == null) {
@@ -251,13 +254,13 @@ public class Sesiones extends JPanel {
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     String etiqueta = rs.getTimestamp("fecha_hora").toLocalDateTime().format(formato)
-                        + " (" + rs.getString("estado") + ")";
+                        + " (" + Tema.etiquetaEstadoCita(rs.getString("estado")) + ")";
                     cmbTurno.addItem(new TurnoItem(rs.getInt("id"), etiqueta));
                 }
             }
 
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Error al cargar turnos: " + e.getMessage());
+            JOptionPane.showMessageDialog(this, "Error al cargar citas: " + e.getMessage());
         }
     }
 
@@ -358,7 +361,7 @@ public class Sesiones extends JPanel {
 
         Integer pacienteId = pacienteSeleccionadoId();
         if (pacienteId == null) {
-            JOptionPane.showMessageDialog(this, "Selecciona un paciente");
+            JOptionPane.showMessageDialog(this, "Selecciona un estudiante");
             return;
         }
 
@@ -429,8 +432,8 @@ public class Sesiones extends JPanel {
                 }
             }
 
-            // Si la nota queda vinculada a un turno que todavía estaba "programado", asumimos que
-            // la sesión se llevó a cabo y lo pasamos a "completado" (no pisa cancelado/ausente,
+            // Si la nota queda vinculada a una cita que todavía estaba "programada", asumimos que
+            // la atención se llevó a cabo y la pasamos a "completada" (no pisa cancelada/ausente,
             // por si se marcó así a propósito).
             boolean turnoCompletado = false;
             if (turnoId != null) {
@@ -440,12 +443,12 @@ public class Sesiones extends JPanel {
                     turnoCompletado = psTurno.executeUpdate() > 0;
                 }
                 if (turnoCompletado) {
-                    Auditoria.registrar(cn, "COMPLETAR_TURNO", "turnos", turnoId, "Completado automáticamente al guardar la sesión");
+                    Auditoria.registrar(cn, "COMPLETAR_TURNO", "turnos", turnoId, "Completado automáticamente al guardar la atención");
                 }
             }
 
-            JOptionPane.showMessageDialog(this, (esEdicion ? "Sesión actualizada" : "Sesión registrada")
-                + (turnoCompletado ? "\nEl turno asociado se marcó como completado." : ""));
+            JOptionPane.showMessageDialog(this, (esEdicion ? "Atención actualizada" : "Atención registrada")
+                + (turnoCompletado ? "\nLa cita asociada se marcó como realizada." : ""));
             limpiarFormularioSesion();
             cargarTurnosDelPaciente();
             cargarSesiones();
@@ -470,7 +473,7 @@ public class Sesiones extends JPanel {
     private void exportarNota() {
         Integer pacienteId = pacienteSeleccionadoId();
         if (pacienteId == null) {
-            JOptionPane.showMessageDialog(this, "Seleccioná un paciente");
+            JOptionPane.showMessageDialog(this, "Seleccioná un estudiante");
             return;
         }
         if (txtSubjetivo.getText().trim().isEmpty() && txtObjetivo.getText().trim().isEmpty()
@@ -482,17 +485,20 @@ public class Sesiones extends JPanel {
         PacienteItem paciente = (PacienteItem) cmbPaciente.getSelectedItem();
         StringBuilder sb = new StringBuilder();
         sb.append("================================================================================\n");
-        sb.append("NOTA DE SESIÓN (SOAP)\n");
+        sb.append("NOTA DE ATENCIÓN PSICOLÓGICA (SOAP)\n");
         sb.append("================================================================================\n\n");
-        sb.append("Paciente: ").append(paciente != null ? paciente.nombre : "N/A").append("\n");
+        sb.append("Estudiante: ").append(paciente != null ? paciente.nombre : "N/A").append("\n");
+        if (paciente != null && paciente.curso != null && !paciente.curso.isEmpty()) {
+            sb.append("Curso: ").append(paciente.curso).append("\n");
+        }
         sb.append("Fecha de exportación: ").append(java.time.LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"))).append("\n\n");
-        sb.append("SUBJETIVO\n--------------------------------------------------------------------------------\n");
+        sb.append("RELATO DEL ESTUDIANTE (SUBJETIVO)\n--------------------------------------------------------------------------------\n");
         sb.append(txtSubjetivo.getText().trim()).append("\n\n");
-        sb.append("OBJETIVO\n--------------------------------------------------------------------------------\n");
+        sb.append("OBSERVACIÓN PROFESIONAL (OBJETIVO)\n--------------------------------------------------------------------------------\n");
         sb.append(txtObjetivo.getText().trim()).append("\n\n");
-        sb.append("ANÁLISIS\n--------------------------------------------------------------------------------\n");
+        sb.append("ANÁLISIS DE LA SITUACIÓN\n--------------------------------------------------------------------------------\n");
         sb.append(txtAnalisis.getText().trim()).append("\n\n");
-        sb.append("PLAN\n--------------------------------------------------------------------------------\n");
+        sb.append("ACUERDOS Y RECOMENDACIONES (PLAN)\n--------------------------------------------------------------------------------\n");
         sb.append(txtPlan.getText().trim()).append("\n");
         sb.append("================================================================================\n");
 
@@ -500,7 +506,7 @@ public class Sesiones extends JPanel {
         if (!carpetaReportes.exists()) {
             carpetaReportes.mkdirs();
         }
-        String nombreArchivo = "NotaSOAP_" + (paciente != null ? paciente.nombre.replace(" ", "_") : "paciente")
+        String nombreArchivo = "NotaAtencion_" + (paciente != null ? paciente.nombre.replace(" ", "_") : "estudiante")
             + "_" + java.time.LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")) + ".txt";
         String rutaArchivo = new java.io.File(carpetaReportes, nombreArchivo).getPath();
 
@@ -546,15 +552,17 @@ public class Sesiones extends JPanel {
     private static class PacienteItem {
         final int id;
         final String nombre;
+        final String curso;
 
-        PacienteItem(int id, String nombre) {
+        PacienteItem(int id, String nombre, String curso) {
             this.id = id;
             this.nombre = nombre;
+            this.curso = curso;
         }
 
         @Override
         public String toString() {
-            return nombre;
+            return (curso != null && !curso.isEmpty()) ? nombre + " — " + curso : nombre;
         }
     }
 

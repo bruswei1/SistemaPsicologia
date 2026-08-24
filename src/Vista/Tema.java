@@ -4,23 +4,31 @@ import com.formdev.flatlaf.FlatDarkLaf;
 import com.formdev.flatlaf.FlatLaf;
 import com.formdev.flatlaf.FlatLightLaf;
 import javax.swing.BorderFactory;
+import javax.swing.DefaultListCellRenderer;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
+import javax.swing.JList;
 import javax.swing.JPanel;
+import javax.swing.ListCellRenderer;
 import javax.swing.JTable;
 import javax.swing.KeyStroke;
 import javax.swing.SwingConstants;
 import javax.swing.UIManager;
+import javax.swing.BoxLayout;
 import javax.swing.border.Border;
+import javax.swing.border.TitledBorder;
 import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.event.KeyEvent;
+import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
+import java.awt.GradientPaint;
+import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.RenderingHints;
@@ -51,18 +59,22 @@ public final class Tema {
     public static Color TEXTO_PRIMARIO;
     public static Color TEXTO_SECUNDARIO;
 
-    // Colores de acción (fijos, no dependen del modo)
-    public static final Color PRIMARIO = new Color(58, 91, 217);
+    // Colores de acción (fijos, no dependen del modo). Paleta tomada del cartel real del
+    // Departamento de Orientación y Psicología del colegio: violeta institucional profundo como
+    // color primario, azul institucional como secundario/de marca, y verde-azulado para éxito
+    // (funcional, no de marca).
+    public static final Color PRIMARIO = new Color(75, 58, 140);
+    public static final Color SECUNDARIO = new Color(47, 90, 168);
     public static final Color EXITO = new Color(13, 148, 118);
-    public static final Color PELIGRO = new Color(220, 53, 69);
+    public static final Color PELIGRO = new Color(196, 58, 58);
     public static final Color NEUTRO = new Color(206, 212, 218);
 
     /** Pares de color (insignia suave + ícono sólido) para diferenciar categorías en tarjetas. */
-    public static final Acento ACENTO_AZUL = new Acento(new Color(224, 231, 255), new Color(58, 91, 217));
+    public static final Acento ACENTO_AZUL = new Acento(new Color(221, 231, 249), SECUNDARIO);
     public static final Acento ACENTO_VERDE = new Acento(new Color(209, 250, 229), new Color(5, 150, 105));
-    public static final Acento ACENTO_MORADO = new Acento(new Color(237, 224, 255), new Color(124, 58, 237));
+    public static final Acento ACENTO_MORADO = new Acento(new Color(228, 222, 247), PRIMARIO);
     public static final Acento ACENTO_AMBAR = new Acento(new Color(254, 240, 199), new Color(202, 113, 6));
-    public static final Acento ACENTO_CELESTE = new Acento(new Color(207, 241, 255), new Color(2, 132, 199));
+    public static final Acento ACENTO_CELESTE = new Acento(new Color(224, 231, 250), new Color(74, 109, 201));
     public static final Acento ACENTO_ROSA = new Acento(new Color(255, 224, 235), new Color(219, 39, 119));
     public static final Acento ACENTO_GRIS = new Acento(new Color(226, 230, 236), new Color(71, 85, 105));
 
@@ -112,6 +124,7 @@ public final class Tema {
         } else {
             FlatLightLaf.setup();
         }
+        aplicarEsquinasRedondeadas();
         aplicarPaleta();
     }
 
@@ -128,9 +141,27 @@ public final class Tema {
         } else {
             FlatLightLaf.setup();
         }
+        aplicarEsquinasRedondeadas();
         FlatLaf.updateUI();
         aplicarPaleta();
         guardarPreferenciaOscuro();
+    }
+
+    /**
+     * Redondea globalmente botones, campos, combos y scrollbars vía las propiedades de FlatLaf
+     * (hay que llamarla después de cada `FlatLightLaf`/`FlatDarkLaf.setup()`, que resetea los
+     * defaults de UIManager). Sin esto, todos los componentes nativos de Swing/FlatLaf quedan con
+     * esquina recta por default, lo que desentona con las tarjetas/paneles pintados a mano que sí
+     * usamos con esquina redondeada en toda la app.
+     */
+    private static void aplicarEsquinasRedondeadas() {
+        UIManager.put("Button.arc", 14);
+        UIManager.put("Component.arc", 10);
+        UIManager.put("TextComponent.arc", 10);
+        UIManager.put("CheckBox.arc", 4);
+        UIManager.put("ScrollBar.thumbArc", 999);
+        UIManager.put("ScrollBar.trackArc", 999);
+        UIManager.put("ProgressBar.arc", 999);
     }
 
     private static boolean leerPreferenciaOscuro() {
@@ -147,7 +178,7 @@ public final class Tema {
         java.util.Properties props = new java.util.Properties();
         props.setProperty("oscuro", String.valueOf(oscuro));
         try (java.io.FileOutputStream out = new java.io.FileOutputStream(ARCHIVO_PREFERENCIA)) {
-            props.store(out, "Preferencia de tema - Sistema de Psicologia");
+            props.store(out, "Preferencia de tema - Depto. de Psicologia, Colegio San Roque Gonzalez");
         } catch (java.io.IOException e) {
             System.out.println("No se pudo guardar la preferencia de tema: " + e.getMessage());
         }
@@ -164,7 +195,7 @@ public final class Tema {
             TEXTO_PRIMARIO = colorOMenos("Label.foreground", new Color(230, 230, 230));
             TEXTO_SECUNDARIO = colorOMenos("Label.disabledForeground", new Color(150, 150, 150));
         } else {
-            FONDO = new Color(244, 246, 249);
+            FONDO = new Color(246, 245, 251);
             SUPERFICIE = new Color(255, 255, 255);
             BORDE = new Color(226, 230, 236);
             BORDE_SUAVE = new Color(236, 239, 243);
@@ -225,6 +256,57 @@ public final class Tema {
         return b;
     }
 
+    /**
+     * Encabezado de marca para el tope de una pantalla: franja con degradé
+     * {@link #SECUNDARIO} → {@link #PRIMARIO} (mismos colores del cartel real del Departamento),
+     * título en blanco y subtítulo opcional en blanco semi-transparente. Reemplaza el header
+     * blanco liso que cada pantalla armaba a mano.
+     */
+    public static JPanel panelEncabezado(String titulo, String subtitulo) {
+        JPanel panel = new JPanel(new BorderLayout()) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setPaint(new GradientPaint(0, 0, SECUNDARIO, getWidth(), getHeight(), PRIMARIO));
+                g2.fillRect(0, 0, getWidth(), getHeight());
+                g2.dispose();
+                super.paintComponent(g);
+            }
+        };
+        panel.setOpaque(false);
+        panel.setPreferredSize(new Dimension(0, subtitulo != null && !subtitulo.isEmpty() ? 92 : 72));
+        panel.setBorder(BorderFactory.createEmptyBorder(16, 24, 16, 24));
+
+        JPanel textos = new JPanel();
+        textos.setOpaque(false);
+        textos.setLayout(new BoxLayout(textos, BoxLayout.Y_AXIS));
+
+        JLabel lblTitulo = new JLabel(titulo);
+        lblTitulo.setFont(TITULO);
+        lblTitulo.setForeground(Color.WHITE);
+        textos.add(lblTitulo);
+
+        if (subtitulo != null && !subtitulo.isEmpty()) {
+            JLabel lblSubtitulo = new JLabel(subtitulo);
+            lblSubtitulo.setFont(TEXTO);
+            lblSubtitulo.setForeground(new Color(255, 255, 255, 215));
+            textos.add(lblSubtitulo);
+        }
+
+        panel.add(textos, BorderLayout.WEST);
+        return panel;
+    }
+
+    /** `TitledBorder` con tipografía/color de marca, para reemplazar `BorderFactory.createTitledBorder(texto)` suelto. */
+    public static TitledBorder tituloSeccion(String texto) {
+        TitledBorder borde = BorderFactory.createTitledBorder(
+            BorderFactory.createLineBorder(BORDE, 1), texto);
+        borde.setTitleFont(new Font(FAMILIA, Font.BOLD, 13));
+        borde.setTitleColor(PRIMARIO);
+        return borde;
+    }
+
     /** Borde normal para un campo de formulario. */
     public static Border bordeCampo() {
         return BorderFactory.createLineBorder(BORDE, 1);
@@ -268,13 +350,70 @@ public final class Tema {
         }
     }
 
-    /** Renderer de "pill" de color para columnas de estado (ej. estado de un turno). */
+    /** Traduce el rol crudo guardado en BD (admin/psicologo/secretaria) a la etiqueta que ve el usuario. */
+    public static String etiquetaRol(String rol) {
+        if (rol == null) {
+            return "";
+        }
+        switch (rol) {
+            case "admin": return "Administrador/a";
+            case "psicologo": return "Profesional de Psicología";
+            case "secretaria": return "Usuario autorizado";
+            default: return rol;
+        }
+    }
+
+    /** Traduce el estado crudo de una cita (programado/completado/cancelado/ausente) a su etiqueta. */
+    public static String etiquetaEstadoCita(String estado) {
+        if (estado == null) {
+            return "";
+        }
+        switch (estado) {
+            case "programado": return "Programada";
+            case "completado": return "Realizada";
+            case "cancelado": return "Cancelada";
+            case "ausente": return "No asistió";
+            default: return estado;
+        }
+    }
+
+    /** Renderer de tabla que muestra la etiqueta traducida de un rol, sin alterar el valor real. */
+    public static DefaultTableCellRenderer rendererRol() {
+        return new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
+                                                             boolean hasFocus, int row, int column) {
+                Component c = super.getTableCellRendererComponent(
+                    table, etiquetaRol(String.valueOf(value)), isSelected, hasFocus, row, column);
+                if (!isSelected) {
+                    c.setBackground(row % 2 == 0 ? SUPERFICIE : BORDE_SUAVE);
+                    c.setForeground(TEXTO_PRIMARIO);
+                }
+                setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 10));
+                return c;
+            }
+        };
+    }
+
+    /** Renderer de combo que muestra la etiqueta traducida de un rol, sin alterar el valor seleccionado. */
+    public static ListCellRenderer<Object> rendererRolCombo() {
+        return new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index,
+                                                            boolean isSelected, boolean cellHasFocus) {
+                return super.getListCellRendererComponent(
+                    list, etiquetaRol(String.valueOf(value)), index, isSelected, cellHasFocus);
+            }
+        };
+    }
+
+    /** Renderer de "pill" de color para columnas de estado (ej. estado de una cita). */
     public static DefaultTableCellRenderer rendererEstado() {
         return new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
                                                              boolean hasFocus, int row, int column) {
-                JLabel pill = new JLabel(String.valueOf(value));
+                JLabel pill = new JLabel(etiquetaEstadoCita(String.valueOf(value)));
                 pill.setOpaque(true);
                 pill.setFont(TEXTO_CHICO);
                 pill.setHorizontalAlignment(SwingConstants.CENTER);
@@ -351,13 +490,13 @@ public final class Tema {
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
 
-        g2.setColor(PRIMARIO);
+        g2.setPaint(new GradientPaint(0, 0, SECUNDARIO, s, s, PRIMARIO));
         g2.fillRoundRect(0, 0, s, s, 16, 16);
 
         g2.setColor(Color.WHITE);
         Font f = new Font(FAMILIA, Font.BOLD, 28);
         g2.setFont(f);
-        String texto = "SP";
+        String texto = "DP";
         java.awt.FontMetrics fm = g2.getFontMetrics();
         int tx = (s - fm.stringWidth(texto)) / 2;
         int ty = (s - fm.getHeight()) / 2 + fm.getAscent();

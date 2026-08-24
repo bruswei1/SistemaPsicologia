@@ -22,6 +22,8 @@ public class GestionPacientes extends javax.swing.JPanel {
     private JTextField txtTelefono;
     private JTextField txtBusqueda;
     private JComboBox<String> comboGenero;
+    private JComboBox<String> comboFiltroCurso;
+    private SelectorCursoSeccion selectorCurso;
     private TitledBorder bordePanelRegistro;
     private Integer pacienteIdActual;
 
@@ -39,52 +41,79 @@ public class GestionPacientes extends javax.swing.JPanel {
 
     private void initComponents() {
         setLayout(new BorderLayout());
+        add(Tema.panelEncabezado("Gestión de Estudiantes", "Registrar, editar y consultar estudiantes"),
+            BorderLayout.NORTH);
 
         JPanel mainPanel = new JPanel();
         mainPanel.setBackground(Tema.FONDO);
         mainPanel.setLayout(new BorderLayout(10, 10));
         mainPanel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
 
-        // Header
-        JLabel lblTitulo = new JLabel("Gestión de Pacientes");
-        lblTitulo.setFont(Tema.SUBTITULO);
-        lblTitulo.setForeground(Tema.TEXTO_PRIMARIO);
-        mainPanel.add(lblTitulo, BorderLayout.NORTH);
-
-        // Panel de búsqueda
+        // Panel de búsqueda — dos filas explícitas (no una sola FlowLayout) porque el combo de
+        // curso es demasiado ancho para entrar junto al resto: si se envuelve solo dentro de un
+        // único FlowLayout, Swing calcula mal el alto preferido del panel (FlowLayout no lo
+        // recalcula al ajustar líneas) y la fila que se envuelve termina superpuesta con la
+        // sección de abajo en vez de empujarla.
         JPanel panelBusqueda = new JPanel();
         panelBusqueda.setBackground(Tema.SUPERFICIE);
         panelBusqueda.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createTitledBorder("Buscar Paciente"),
+            Tema.tituloSeccion("Buscar Estudiante"),
             BorderFactory.createEmptyBorder(10, 10, 10, 10)
         ));
-        panelBusqueda.setLayout(new FlowLayout(FlowLayout.LEFT, 10, 5));
+        panelBusqueda.setLayout(new BoxLayout(panelBusqueda, BoxLayout.Y_AXIS));
 
-        panelBusqueda.add(new JLabel("Buscar por nombre:"));
+        JPanel filaNombre = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
+        filaNombre.setBackground(Tema.SUPERFICIE);
+        filaNombre.add(new JLabel("Buscar por nombre:"));
         txtBusqueda = new JTextField(20);
         txtBusqueda.setBorder(Tema.bordeCampo());
-        panelBusqueda.add(txtBusqueda);
+        filaNombre.add(txtBusqueda);
 
         JButton btnBuscar = Tema.botonPrimario("Buscar", Icono.BUSCAR);
         btnBuscar.addActionListener(e -> buscarPacientes());
-        panelBusqueda.add(btnBuscar);
+        filaNombre.add(btnBuscar);
 
         JButton btnLimpiar = Tema.botonSecundario("Limpiar", Icono.LIMPIAR);
         btnLimpiar.addActionListener(e -> {
             txtBusqueda.setText("");
+            comboFiltroCurso.setSelectedIndex(0);
             cargarPacientes();
         });
-        panelBusqueda.add(btnLimpiar);
+        filaNombre.add(btnLimpiar);
+        filaNombre.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
+        panelBusqueda.add(filaNombre);
 
-        JLabel lblHint = new JLabel("Doble clic en un paciente para ver detalles completos");
+        JPanel filaCurso = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
+        filaCurso.setBackground(Tema.SUPERFICIE);
+        filaCurso.add(new JLabel("Curso:"));
+
+        java.util.List<String> etiquetasCurso = new java.util.ArrayList<>();
+        etiquetasCurso.add("Todos");
+        etiquetasCurso.addAll(util.EstructuraAcademica.todasLasEtiquetas());
+        comboFiltroCurso = new JComboBox<>(etiquetasCurso.toArray(new String[0]));
+        comboFiltroCurso.setPreferredSize(new Dimension(260, comboFiltroCurso.getPreferredSize().height));
+        comboFiltroCurso.setToolTipText("Filtrar por curso");
+        comboFiltroCurso.addActionListener(e -> {
+            comboFiltroCurso.setToolTipText(String.valueOf(comboFiltroCurso.getSelectedItem()));
+            if (txtBusqueda.getText().trim().isEmpty()) {
+                cargarPacientes();
+            } else {
+                buscarPacientes();
+            }
+        });
+        filaCurso.add(comboFiltroCurso);
+
+        JLabel lblHint = new JLabel("Doble clic en un estudiante para ver detalles completos");
         lblHint.setFont(Tema.TEXTO_ITALICA_CHICA);
         lblHint.setForeground(Tema.TEXTO_SECUNDARIO);
-        panelBusqueda.add(lblHint);
+        filaCurso.add(lblHint);
+        filaCurso.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
+        panelBusqueda.add(filaCurso);
 
         mainPanel.add(panelBusqueda, BorderLayout.NORTH);
 
-        // Tabla de pacientes
-        String[] columnas = {"ID", "Nombre", "Apellido", "Email", "Teléfono", "Género"};
+        // Tabla de estudiantes
+        String[] columnas = {"ID", "Nombre", "Apellido", "Email", "Teléfono", "Género", "Curso"};
         modeloTabla = new DefaultTableModel(columnas, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -104,13 +133,13 @@ public class GestionPacientes extends javax.swing.JPanel {
         });
 
         JScrollPane scrollPane = new JScrollPane(tablaPacientes);
-        scrollPane.setBorder(BorderFactory.createTitledBorder("Pacientes Registrados (doble clic para ver detalles)"));
+        scrollPane.setBorder(Tema.tituloSeccion("Estudiantes Registrados (doble clic para ver detalles)"));
         mainPanel.add(scrollPane, BorderLayout.CENTER);
 
         // Panel de registro
         JPanel panelRegistro = new JPanel();
         panelRegistro.setBackground(Tema.SUPERFICIE);
-        bordePanelRegistro = BorderFactory.createTitledBorder("Nuevo Paciente");
+        bordePanelRegistro = Tema.tituloSeccion("Nuevo Estudiante");
         panelRegistro.setBorder(BorderFactory.createCompoundBorder(
             bordePanelRegistro,
             BorderFactory.createEmptyBorder(10, 10, 10, 10)
@@ -149,6 +178,21 @@ public class GestionPacientes extends javax.swing.JPanel {
         btnCancelar.addActionListener(e -> limpiarFormulario());
         panelRegistro.add(btnCancelar);
 
+        // Panel de curso/sección (estructura académica oficial, ver util.EstructuraAcademica)
+        JPanel panelCurso = new JPanel(new BorderLayout());
+        panelCurso.setBackground(Tema.SUPERFICIE);
+        panelCurso.setBorder(BorderFactory.createCompoundBorder(
+            Tema.tituloSeccion("Curso y sección"),
+            BorderFactory.createEmptyBorder(10, 10, 10, 10)
+        ));
+        selectorCurso = new SelectorCursoSeccion();
+        panelCurso.add(selectorCurso, BorderLayout.WEST);
+
+        JPanel panelFormulario = new JPanel(new BorderLayout(0, 10));
+        panelFormulario.setBackground(Tema.SUPERFICIE);
+        panelFormulario.add(panelRegistro, BorderLayout.NORTH);
+        panelFormulario.add(panelCurso, BorderLayout.CENTER);
+
         // Footer
         JPanel footerPanel = new JPanel();
         footerPanel.setBackground(Tema.SUPERFICIE);
@@ -168,7 +212,7 @@ public class GestionPacientes extends javax.swing.JPanel {
         Tema.atajoEscape(this, btnVolver, alVolver);
 
         JPanel panelSur = new JPanel(new BorderLayout());
-        panelSur.add(panelRegistro, BorderLayout.CENTER);
+        panelSur.add(panelFormulario, BorderLayout.CENTER);
         panelSur.add(footerPanel, BorderLayout.SOUTH);
         mainPanel.add(panelSur, BorderLayout.SOUTH);
 
@@ -176,22 +220,12 @@ public class GestionPacientes extends javax.swing.JPanel {
     }
 
     private void cargarPacientes() {
-        modeloTabla.setRowCount(0);
         Tema.conCursorEspera(this, () -> {
             try {
                 List<Paciente> pacientes = util.Sesion.esPsicologo()
                     ? pacienteDAO.obtenerPorPsicologo(util.Sesion.getUsuarioId())
                     : pacienteDAO.obtenerTodos();
-                for (Paciente p : pacientes) {
-                    modeloTabla.addRow(new Object[]{
-                        p.getId(),
-                        p.getNombre(),
-                        p.getApellido(),
-                        p.getEmail() != null ? p.getEmail() : "N/A",
-                        p.getTelefono() != null ? p.getTelefono() : "N/A",
-                        p.getGenero() != null ? p.getGenero() : "N/A"
-                    });
-                }
+                poblarTabla(pacientes);
             } catch (Exception e) {
                 System.out.println("Error cargando pacientes: " + e.getMessage());
             }
@@ -205,26 +239,36 @@ public class GestionPacientes extends javax.swing.JPanel {
             return;
         }
 
-        modeloTabla.setRowCount(0);
         Tema.conCursorEspera(this, () -> {
             try {
                 List<Paciente> pacientes = util.Sesion.esPsicologo()
                     ? pacienteDAO.buscarPorPsicologo(termino, util.Sesion.getUsuarioId())
                     : pacienteDAO.buscar(termino);
-                for (Paciente p : pacientes) {
-                    modeloTabla.addRow(new Object[]{
-                        p.getId(),
-                        p.getNombre(),
-                        p.getApellido(),
-                        p.getEmail() != null ? p.getEmail() : "N/A",
-                        p.getTelefono() != null ? p.getTelefono() : "N/A",
-                        p.getGenero() != null ? p.getGenero() : "N/A"
-                    });
-                }
+                poblarTabla(pacientes);
             } catch (Exception e) {
                 System.out.println("Error buscando pacientes: " + e.getMessage());
             }
         });
+    }
+
+    /** Puebla la tabla con la lista dada, aplicando el filtro de curso seleccionado (si hay uno). */
+    private void poblarTabla(List<Paciente> pacientes) {
+        modeloTabla.setRowCount(0);
+        String filtroCurso = comboFiltroCurso != null ? (String) comboFiltroCurso.getSelectedItem() : "Todos";
+        for (Paciente p : pacientes) {
+            if (filtroCurso != null && !"Todos".equals(filtroCurso) && !filtroCurso.equals(p.getCurso())) {
+                continue;
+            }
+            modeloTabla.addRow(new Object[]{
+                p.getId(),
+                p.getNombre(),
+                p.getApellido(),
+                p.getEmail() != null ? p.getEmail() : "N/A",
+                p.getTelefono() != null ? p.getTelefono() : "N/A",
+                p.getGenero() != null ? p.getGenero() : "N/A",
+                p.getCurso() != null ? p.getCurso() : "N/A"
+            });
+        }
     }
 
     private void guardarPaciente() {
@@ -246,7 +290,7 @@ public class GestionPacientes extends javax.swing.JPanel {
                 if (pacienteIdActual != null) {
                     Paciente paciente = pacienteDAO.obtenerPorId(pacienteIdActual);
                     if (paciente == null) {
-                        JOptionPane.showMessageDialog(this, "El paciente ya no existe", "Error", JOptionPane.ERROR_MESSAGE);
+                        JOptionPane.showMessageDialog(this, "El estudiante ya no existe", "Error", JOptionPane.ERROR_MESSAGE);
                         limpiarFormulario();
                         cargarPacientes();
                         return;
@@ -256,6 +300,7 @@ public class GestionPacientes extends javax.swing.JPanel {
                     paciente.setEmail(email);
                     paciente.setTelefono(telefono);
                     paciente.setGenero((String) comboGenero.getSelectedItem());
+                    paciente.setCurso(selectorCurso.getCursoSeleccionado());
 
                     if (pacienteDAO.actualizar(paciente)) {
                         try (Connection cn = new conexion.Conexion().conectar()) {
@@ -263,15 +308,16 @@ public class GestionPacientes extends javax.swing.JPanel {
                         } catch (Exception ex) {
                             System.out.println("Error registrando auditoría: " + ex.getMessage());
                         }
-                        JOptionPane.showMessageDialog(this, "Paciente actualizado exitosamente", "Éxito", JOptionPane.INFORMATION_MESSAGE);
+                        JOptionPane.showMessageDialog(this, "Estudiante actualizado exitosamente", "Éxito", JOptionPane.INFORMATION_MESSAGE);
                         cargarPacientes();
                         limpiarFormulario();
                     } else {
-                        JOptionPane.showMessageDialog(this, "Error al actualizar el paciente", "Error", JOptionPane.ERROR_MESSAGE);
+                        JOptionPane.showMessageDialog(this, "Error al actualizar el estudiante", "Error", JOptionPane.ERROR_MESSAGE);
                     }
                 } else {
                     Paciente paciente = new Paciente(nombre, apellido, email, telefono);
                     paciente.setGenero((String) comboGenero.getSelectedItem());
+                    paciente.setCurso(selectorCurso.getCursoSeleccionado());
                     if (util.Sesion.esPsicologo()) {
                         paciente.setPsicologoId(util.Sesion.getUsuarioId());
                     }
@@ -283,9 +329,15 @@ public class GestionPacientes extends javax.swing.JPanel {
                         } catch (Exception ex) {
                             System.out.println("Error registrando auditoría: " + ex.getMessage());
                         }
-                        JOptionPane.showMessageDialog(this, "Paciente guardado exitosamente", "Éxito", JOptionPane.INFORMATION_MESSAGE);
+                        JOptionPane.showMessageDialog(this, "Estudiante guardado exitosamente", "Éxito", JOptionPane.INFORMATION_MESSAGE);
                         cargarPacientes();
                         limpiarFormulario();
+                    } else {
+                        JOptionPane.showMessageDialog(this,
+                            "No se pudo guardar el estudiante. Revisá la consola de la aplicación para el detalle del "
+                                + "error (por ejemplo, si falta aplicar la migración db-init/06_estructura_academica.sql "
+                                + "en la base de datos).",
+                            "Error", JOptionPane.ERROR_MESSAGE);
                     }
                 }
             } catch (Exception e) {
@@ -297,7 +349,7 @@ public class GestionPacientes extends javax.swing.JPanel {
     private void editarPacienteSeleccionado() {
         int fila = tablaPacientes.getSelectedRow();
         if (fila < 0) {
-            JOptionPane.showMessageDialog(this, "Seleccione un paciente", "Advertencia", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Seleccione un estudiante", "Advertencia", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
@@ -308,7 +360,7 @@ public class GestionPacientes extends javax.swing.JPanel {
     private void cargarPacienteParaEditar(int id) {
         Paciente paciente = pacienteDAO.obtenerPorId(id);
         if (paciente == null) {
-            JOptionPane.showMessageDialog(this, "No se encontró el paciente", "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "No se encontró el estudiante", "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
@@ -320,20 +372,21 @@ public class GestionPacientes extends javax.swing.JPanel {
         String genero = paciente.getGenero();
         comboGenero.setSelectedItem(
             ("Masculino".equals(genero) || "Femenino".equals(genero) || "Otro".equals(genero)) ? genero : "Otro");
+        selectorCurso.setCursoSeleccionado(paciente.getCurso());
 
-        bordePanelRegistro.setTitle("Editar Paciente: " + paciente.getNombre() + " " + paciente.getApellido());
+        bordePanelRegistro.setTitle("Editar Estudiante: " + paciente.getNombre() + " " + paciente.getApellido());
         repaint();
     }
 
     private void eliminarPaciente() {
         int fila = tablaPacientes.getSelectedRow();
         if (fila < 0) {
-            JOptionPane.showMessageDialog(this, "Seleccione un paciente", "Advertencia", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Seleccione un estudiante", "Advertencia", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
         int id = (int) modeloTabla.getValueAt(fila, 0);
-        int opcion = JOptionPane.showConfirmDialog(this, "¿Desea eliminar este paciente?", "Confirmación", JOptionPane.YES_NO_OPTION);
+        int opcion = JOptionPane.showConfirmDialog(this, "¿Desea eliminar este estudiante?", "Confirmación", JOptionPane.YES_NO_OPTION);
 
         if (opcion == JOptionPane.YES_OPTION) {
             String error = pacienteDAO.eliminar(id);
@@ -343,7 +396,7 @@ public class GestionPacientes extends javax.swing.JPanel {
                 } catch (Exception ex) {
                     System.out.println("Error registrando auditoría: " + ex.getMessage());
                 }
-                JOptionPane.showMessageDialog(this, "Paciente eliminado", "Éxito", JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Estudiante eliminado", "Éxito", JOptionPane.INFORMATION_MESSAGE);
                 if (id == (pacienteIdActual != null ? pacienteIdActual : -1)) {
                     limpiarFormulario();
                 }
@@ -357,7 +410,7 @@ public class GestionPacientes extends javax.swing.JPanel {
     private void verDetallesPaciente() {
         int fila = tablaPacientes.getSelectedRow();
         if (fila < 0) {
-            JOptionPane.showMessageDialog(this, "Seleccione un paciente", "Advertencia", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Seleccione un estudiante", "Advertencia", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
@@ -379,7 +432,8 @@ public class GestionPacientes extends javax.swing.JPanel {
         txtEmail.setText("");
         txtTelefono.setText("");
         comboGenero.setSelectedIndex(0);
-        bordePanelRegistro.setTitle("Nuevo Paciente");
+        selectorCurso.setCursoSeleccionado(null);
+        bordePanelRegistro.setTitle("Nuevo Estudiante");
         Tema.marcarError(txtNombre, true);
         Tema.marcarError(txtApellido, true);
         repaint();
@@ -390,7 +444,7 @@ public class GestionPacientes extends javax.swing.JPanel {
         Tema.instalarLookAndFeelGuardado();
 
         SwingUtilities.invokeLater(() -> {
-            JFrame f = new JFrame("Gestión de Pacientes (prueba aislada)");
+            JFrame f = new JFrame("Gestión de Estudiantes (prueba aislada)");
             f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             f.setIconImage(Tema.iconoApp());
             f.getContentPane().add(new GestionPacientes(() -> System.exit(0)));

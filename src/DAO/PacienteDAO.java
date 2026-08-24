@@ -23,8 +23,8 @@ public class PacienteDAO extends DAO {
         }
 
         String sql = "INSERT INTO pacientes (nombre, apellido, email, telefono, fecha_nacimiento, genero, " +
-                     "direccion, motivo_consulta, psicologo_id, antecedentes_personales, antecedentes_familiares, anamnesis) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                     "direccion, motivo_consulta, curso, psicologo_id, antecedentes_personales, antecedentes_familiares, anamnesis) " +
+                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection con = obtenerConexion();
              PreparedStatement pst = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
@@ -38,10 +38,15 @@ public class PacienteDAO extends DAO {
             pst.setString(6, paciente.getGenero());
             pst.setString(7, paciente.getDireccion());
             pst.setString(8, paciente.getMotivoConsulta());
-            pst.setInt(9, paciente.getPsicologoId() > 0 ? paciente.getPsicologoId() : 0);
-            pst.setString(10, paciente.getAntecedentesPersonales());
-            pst.setString(11, paciente.getAntecedenteFamiliares());
-            pst.setString(12, paciente.getAnamnesis());
+            pst.setString(9, paciente.getCurso());
+            if (paciente.getPsicologoId() > 0) {
+                pst.setInt(10, paciente.getPsicologoId());
+            } else {
+                pst.setNull(10, Types.INTEGER);
+            }
+            pst.setString(11, paciente.getAntecedentesPersonales());
+            pst.setString(12, paciente.getAntecedenteFamiliares());
+            pst.setString(13, paciente.getAnamnesis());
 
             pst.executeUpdate();
             registrarExito("Crear paciente: " + paciente.getNombre());
@@ -112,7 +117,7 @@ public class PacienteDAO extends DAO {
         }
 
         String sql = "UPDATE pacientes SET nombre=?, apellido=?, email=?, telefono=?, fecha_nacimiento=?, " +
-                     "genero=?, direccion=?, motivo_consulta=?, psicologo_id=?, antecedentes_personales=?, " +
+                     "genero=?, direccion=?, motivo_consulta=?, curso=?, psicologo_id=?, antecedentes_personales=?, " +
                      "antecedentes_familiares=?, anamnesis=? WHERE id=?";
 
         try (Connection con = obtenerConexion();
@@ -122,16 +127,21 @@ public class PacienteDAO extends DAO {
             pst.setString(2, paciente.getApellido());
             pst.setString(3, paciente.getEmail());
             pst.setString(4, paciente.getTelefono());
-            pst.setDate(5, paciente.getFechaNacimiento() != null ? 
+            pst.setDate(5, paciente.getFechaNacimiento() != null ?
                         Date.valueOf(paciente.getFechaNacimiento()) : null);
             pst.setString(6, paciente.getGenero());
             pst.setString(7, paciente.getDireccion());
             pst.setString(8, paciente.getMotivoConsulta());
-            pst.setInt(9, paciente.getPsicologoId() > 0 ? paciente.getPsicologoId() : 0);
-            pst.setString(10, paciente.getAntecedentesPersonales());
-            pst.setString(11, paciente.getAntecedenteFamiliares());
-            pst.setString(12, paciente.getAnamnesis());
-            pst.setInt(13, paciente.getId());
+            pst.setString(9, paciente.getCurso());
+            if (paciente.getPsicologoId() > 0) {
+                pst.setInt(10, paciente.getPsicologoId());
+            } else {
+                pst.setNull(10, Types.INTEGER);
+            }
+            pst.setString(11, paciente.getAntecedentesPersonales());
+            pst.setString(12, paciente.getAntecedenteFamiliares());
+            pst.setString(13, paciente.getAnamnesis());
+            pst.setInt(14, paciente.getId());
 
             int filasActualizadas = pst.executeUpdate();
             if (filasActualizadas > 0) {
@@ -353,6 +363,31 @@ public class PacienteDAO extends DAO {
     }
 
     /**
+     * Cantidad de estudiantes por curso (para el panel "Estudiantes por curso" del Dashboard
+     * y para las exportaciones). Solo cuenta filas con curso asignado.
+     */
+    public java.util.LinkedHashMap<String, Integer> contarPorCurso() {
+        java.util.LinkedHashMap<String, Integer> resultado = new java.util.LinkedHashMap<>();
+        String sql = "SELECT curso, COUNT(*) AS total FROM pacientes WHERE curso IS NOT NULL AND curso <> '' "
+            + "GROUP BY curso ORDER BY curso";
+
+        try (Connection con = obtenerConexion();
+             Statement st = con.createStatement();
+             ResultSet rs = st.executeQuery(sql)) {
+
+            while (rs.next()) {
+                resultado.put(rs.getString("curso"), rs.getInt("total"));
+            }
+            registrarExito("Contar pacientes por curso: " + resultado.size() + " cursos");
+
+        } catch (SQLException e) {
+            registrarError("contar por curso", e);
+        }
+
+        return resultado;
+    }
+
+    /**
      * Mapear ResultSet a objeto Paciente
      */
     private Paciente mapearPaciente(ResultSet rs) throws SQLException {
@@ -367,6 +402,7 @@ public class PacienteDAO extends DAO {
         p.setGenero(rs.getString("genero"));
         p.setDireccion(rs.getString("direccion"));
         p.setMotivoConsulta(rs.getString("motivo_consulta"));
+        p.setCurso(rs.getString("curso"));
         p.setAntecedentesPersonales(rs.getString("antecedentes_personales"));
         p.setAntecedenteFamiliares(rs.getString("antecedentes_familiares"));
         p.setAnamnesis(rs.getString("anamnesis"));

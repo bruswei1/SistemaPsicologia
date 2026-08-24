@@ -2,6 +2,7 @@ package Vista;
 
 import dao.*;
 import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 
 public class Dashboard extends javax.swing.JPanel {
@@ -16,6 +17,7 @@ public class Dashboard extends javax.swing.JPanel {
     private GraficoBarras grafico;
     private GraficoBarras graficoTendencia;
     private JComboBox<String> comboPeriodo;
+    private DefaultTableModel modeloPorCurso;
 
     public Dashboard(Runnable alVolver) {
         this.alVolver = alVolver;
@@ -37,28 +39,15 @@ public class Dashboard extends javax.swing.JPanel {
         // Header
         JPanel headerPanel = new JPanel(new BorderLayout());
         headerPanel.setBackground(Tema.SUPERFICIE);
-        headerPanel.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Tema.BORDE_SUAVE));
+        headerPanel.add(Tema.panelEncabezado("Panel General", "Resumen general del Departamento de Psicología"),
+            BorderLayout.NORTH);
 
-        JPanel headerTextos = new JPanel();
-        headerTextos.setOpaque(false);
-        headerTextos.setLayout(new BoxLayout(headerTextos, BoxLayout.Y_AXIS));
-
-        JLabel lblTitulo = new JLabel("Dashboard");
-        lblTitulo.setFont(Tema.TITULO);
-        lblTitulo.setForeground(Tema.TEXTO_PRIMARIO);
-        lblTitulo.setBorder(BorderFactory.createEmptyBorder(15, 20, 5, 0));
-        headerTextos.add(lblTitulo);
-
-        JLabel lblSubtitulo = new JLabel("Resumen general del sistema");
-        lblSubtitulo.setFont(Tema.TEXTO_CHICO);
-        lblSubtitulo.setForeground(Tema.TEXTO_SECUNDARIO);
-        lblSubtitulo.setBorder(BorderFactory.createEmptyBorder(0, 20, 15, 0));
-        headerTextos.add(lblSubtitulo);
-
-        headerPanel.add(headerTextos, BorderLayout.WEST);
-
-        JPanel headerAcciones = new JPanel();
-        headerAcciones.setOpaque(false);
+        JPanel headerAcciones = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 6));
+        headerAcciones.setBackground(Tema.SUPERFICIE);
+        headerAcciones.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createMatteBorder(0, 0, 1, 0, Tema.BORDE_SUAVE),
+            BorderFactory.createEmptyBorder(4, 16, 4, 16)
+        ));
         headerAcciones.add(new JLabel("Período:"));
         comboPeriodo = new JComboBox<>(PERIODOS);
         comboPeriodo.addActionListener(e -> cargarDatos());
@@ -66,7 +55,7 @@ public class Dashboard extends javax.swing.JPanel {
         JButton btnActualizar = Tema.botonSecundario("Actualizar", Icono.LIMPIAR);
         btnActualizar.addActionListener(e -> cargarDatos());
         headerAcciones.add(btnActualizar);
-        headerPanel.add(headerAcciones, BorderLayout.EAST);
+        headerPanel.add(headerAcciones, BorderLayout.SOUTH);
 
         mainPanel.add(headerPanel, BorderLayout.NORTH);
 
@@ -79,28 +68,28 @@ public class Dashboard extends javax.swing.JPanel {
         contentPanel.setBackground(Tema.FONDO);
         contentPanel.setLayout(new GridLayout(1, 4, 20, 0));
 
-        lblPacientes = new TarjetaEstadistica(Icono.PACIENTES, "Pacientes", "0", Tema.ACENTO_AZUL.icono);
+        lblPacientes = new TarjetaEstadistica(Icono.PACIENTES, "Estudiantes", "0", Tema.ACENTO_AZUL.icono);
         contentPanel.add(lblPacientes);
 
-        lblSesiones = new TarjetaEstadistica(Icono.SESIONES, "Sesiones", "0", Tema.ACENTO_MORADO.icono);
+        lblSesiones = new TarjetaEstadistica(Icono.SESIONES, "Atenciones", "0", Tema.ACENTO_MORADO.icono);
         contentPanel.add(lblSesiones);
 
-        lblTurnos = new TarjetaEstadistica(Icono.TURNOS, "Turnos", "0", Tema.ACENTO_VERDE.icono);
+        lblTurnos = new TarjetaEstadistica(Icono.TURNOS, "Citas", "0", Tema.ACENTO_VERDE.icono);
         contentPanel.add(lblTurnos);
 
-        lblPsicologos = new TarjetaEstadistica(Icono.PACIENTES, "Psicólogos", "0", Tema.ACENTO_CELESTE.icono);
+        lblPsicologos = new TarjetaEstadistica(Icono.PACIENTES, "Profesionales", "0", Tema.ACENTO_CELESTE.icono);
         contentPanel.add(lblPsicologos);
 
         centro.add(contentPanel, BorderLayout.NORTH);
 
         grafico = new GraficoBarras(
-            new String[]{"Pacientes", "Sesiones", "Turnos", "Psicólogos"},
+            new String[]{"Estudiantes", "Atenciones", "Citas", "Profesionales"},
             new Color[]{Tema.ACENTO_AZUL.icono, Tema.ACENTO_MORADO.icono, Tema.ACENTO_VERDE.icono, Tema.ACENTO_CELESTE.icono}
         );
         JPanel panelGrafico = new JPanel(new BorderLayout());
         panelGrafico.setBackground(Tema.SUPERFICIE);
         panelGrafico.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createTitledBorder("Comparativa"),
+            Tema.tituloSeccion("Comparativa"),
             BorderFactory.createEmptyBorder(10, 20, 20, 20)
         ));
         panelGrafico.add(grafico, BorderLayout.CENTER);
@@ -117,7 +106,7 @@ public class Dashboard extends javax.swing.JPanel {
         JPanel panelTendencia = new JPanel(new BorderLayout());
         panelTendencia.setBackground(Tema.SUPERFICIE);
         panelTendencia.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createTitledBorder("Pacientes nuevos por mes"),
+            Tema.tituloSeccion("Estudiantes nuevos por mes"),
             BorderFactory.createEmptyBorder(10, 20, 20, 20)
         ));
         panelTendencia.add(graficoTendencia, BorderLayout.CENTER);
@@ -128,6 +117,24 @@ public class Dashboard extends javax.swing.JPanel {
         panelGraficos.add(panelTendencia);
 
         centro.add(panelGraficos, BorderLayout.CENTER);
+
+        modeloPorCurso = new DefaultTableModel(new Object[]{"Curso", "Estudiantes"}, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
+        JTable tablaPorCurso = new JTable(modeloPorCurso);
+        Tema.estilizarTabla(tablaPorCurso);
+        tablaPorCurso.setPreferredScrollableViewportSize(new Dimension(0, 160));
+        JPanel panelPorCurso = new JPanel(new BorderLayout());
+        panelPorCurso.setBackground(Tema.SUPERFICIE);
+        panelPorCurso.setBorder(BorderFactory.createCompoundBorder(
+            Tema.tituloSeccion("Estudiantes por curso"),
+            BorderFactory.createEmptyBorder(10, 20, 20, 20)
+        ));
+        panelPorCurso.add(new JScrollPane(tablaPorCurso), BorderLayout.CENTER);
+        centro.add(panelPorCurso, BorderLayout.SOUTH);
 
         mainPanel.add(centro, BorderLayout.CENTER);
 
@@ -166,6 +173,7 @@ public class Dashboard extends javax.swing.JPanel {
                     int totalTurnos = turnoDAO.obtenerCountTurnosConfirmadosDesde(desde);
                     int totalPsicologos = usuarioDAO.obtenerPorRol("psicologo").size();
                     java.util.LinkedHashMap<String, Integer> nuevosPorMes = pacienteDAO.obtenerNuevosPorMes(6);
+                    java.util.LinkedHashMap<String, Integer> porCurso = pacienteDAO.contarPorCurso();
 
                     SwingUtilities.invokeLater(() -> {
                         lblPacientes.setNumero(String.valueOf(totalPacientes));
@@ -174,6 +182,10 @@ public class Dashboard extends javax.swing.JPanel {
                         lblPsicologos.setNumero(String.valueOf(totalPsicologos));
                         grafico.setValores(new int[]{totalPacientes, totalSesiones, totalTurnos, totalPsicologos});
                         graficoTendencia.setValores(nuevosPorMes.values().stream().mapToInt(Integer::intValue).toArray());
+                        modeloPorCurso.setRowCount(0);
+                        for (java.util.Map.Entry<String, Integer> entrada : porCurso.entrySet()) {
+                            modeloPorCurso.addRow(new Object[]{entrada.getKey(), entrada.getValue()});
+                        }
                     });
 
                     System.out.println("Dashboard actualizado: " + totalPacientes + " pacientes");
@@ -192,7 +204,7 @@ public class Dashboard extends javax.swing.JPanel {
         Tema.instalarLookAndFeelGuardado();
 
         SwingUtilities.invokeLater(() -> {
-            JFrame f = new JFrame("Dashboard (prueba aislada)");
+            JFrame f = new JFrame("Panel General (prueba aislada)");
             f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             f.setIconImage(Tema.iconoApp());
             f.getContentPane().add(new Dashboard(() -> System.exit(0)));

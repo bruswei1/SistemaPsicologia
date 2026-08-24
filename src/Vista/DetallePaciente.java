@@ -40,7 +40,7 @@ public class DetallePaciente extends javax.swing.JFrame {
 
     private void initComponents() {
         setSize(1000, 900);
-        setTitle("Detalle del Paciente - Sistema de Psicología");
+        setTitle("Detalle del Estudiante - Departamento de Psicología");
 
         JPanel mainPanel = new JPanel();
         mainPanel.setBackground(Tema.FONDO);
@@ -55,11 +55,11 @@ public class DetallePaciente extends javax.swing.JFrame {
         // Tab 1: Información Personal
         tabbedPane.addTab("Información Personal", new IconoSwing(Icono.PACIENTES, Tema.PRIMARIO, 16), crearPanelPersonal());
 
-        // Tab 2: Información Clínica
-        tabbedPane.addTab("Información Clínica", new IconoSwing(Icono.HISTORIA, Tema.PRIMARIO, 16), crearPanelClinica());
+        // Tab 2: Seguimiento del Estudiante
+        tabbedPane.addTab("Seguimiento del Estudiante", new IconoSwing(Icono.HISTORIA, Tema.PRIMARIO, 16), crearPanelClinica());
 
-        // Tab 3: Sesiones
-        tabbedPane.addTab("Sesiones", new IconoSwing(Icono.SESIONES, Tema.PRIMARIO, 16), crearPanelSesiones());
+        // Tab 3: Atenciones
+        tabbedPane.addTab("Atenciones", new IconoSwing(Icono.SESIONES, Tema.PRIMARIO, 16), crearPanelSesiones());
 
         mainPanel.add(tabbedPane, BorderLayout.CENTER);
 
@@ -82,7 +82,11 @@ public class DetallePaciente extends javax.swing.JFrame {
 
         mainPanel.add(footerPanel, BorderLayout.SOUTH);
 
-        getContentPane().add(mainPanel);
+        String nombreCompleto = pacienteActual != null
+            ? pacienteActual.getNombre() + " " + pacienteActual.getApellido() : "";
+        getContentPane().setLayout(new BorderLayout());
+        getContentPane().add(Tema.panelEncabezado("Detalle del Estudiante", nombreCompleto), BorderLayout.NORTH);
+        getContentPane().add(mainPanel, BorderLayout.CENTER);
     }
 
     private JPanel crearPanelPersonal() {
@@ -92,14 +96,15 @@ public class DetallePaciente extends javax.swing.JFrame {
         panel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
 
         // Sección: Datos Básicos
-        panel.add(crearSeccion("DATOS BÁSICOS", 
-            new String[]{"Nombre Completo", "Email", "Teléfono", "Género", "Fecha Nacimiento", "Dirección"},
+        panel.add(crearSeccion("DATOS BÁSICOS",
+            new String[]{"Nombre Completo", "Curso", "Email", "Teléfono", "Género", "Fecha Nacimiento", "Dirección"},
             new String[]{
                 pacienteActual != null ? pacienteActual.getNombre() + " " + pacienteActual.getApellido() : "N/A",
+                pacienteActual != null ? (pacienteActual.getCurso() != null ? pacienteActual.getCurso() : "No especificado") : "N/A",
                 pacienteActual != null ? (pacienteActual.getEmail() != null ? pacienteActual.getEmail() : "No especificado") : "N/A",
                 pacienteActual != null ? (pacienteActual.getTelefono() != null ? pacienteActual.getTelefono() : "No especificado") : "N/A",
                 pacienteActual != null ? (pacienteActual.getGenero() != null ? pacienteActual.getGenero() : "No especificado") : "N/A",
-                pacienteActual != null && pacienteActual.getFechaNacimiento() != null ? 
+                pacienteActual != null && pacienteActual.getFechaNacimiento() != null ?
                     pacienteActual.getFechaNacimiento().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) : "No especificada",
                 pacienteActual != null ? (pacienteActual.getDireccion() != null ? pacienteActual.getDireccion() : "No especificada") : "N/A"
             }
@@ -107,9 +112,9 @@ public class DetallePaciente extends javax.swing.JFrame {
 
         panel.add(Box.createVerticalStrut(20));
 
-        // Sección: Motivo de Consulta
-        panel.add(crearSeccionTexto("MOTIVO DE CONSULTA", 
-            pacienteActual != null && pacienteActual.getMotivoConsulta() != null ? 
+        // Sección: Motivo de la Atención
+        panel.add(crearSeccionTexto("MOTIVO DE LA ATENCIÓN",
+            pacienteActual != null && pacienteActual.getMotivoConsulta() != null ?
                 pacienteActual.getMotivoConsulta() : "No especificado"));
 
         panel.add(Box.createVerticalStrut(20));
@@ -150,32 +155,32 @@ public class DetallePaciente extends javax.swing.JFrame {
         panel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
 
         if (historiaActual != null) {
-            panel.add(crearSeccionTexto("MOTIVO DE CONSULTA", 
-                historiaActual.getMotivoConsulta() != null ? 
+            panel.add(crearSeccionTexto("MOTIVO DE LA ATENCIÓN",
+                historiaActual.getMotivoConsulta() != null ?
                     historiaActual.getMotivoConsulta() : "No especificado"));
 
             panel.add(Box.createVerticalStrut(20));
 
-            panel.add(crearSeccionTexto("OBSERVACIONES GENERALES", 
-                historiaActual.getObservacionesGenerales() != null ? 
+            panel.add(crearSeccionTexto("OBSERVACIONES GENERALES",
+                historiaActual.getObservacionesGenerales() != null ?
                     historiaActual.getObservacionesGenerales() : "No especificado"));
 
             panel.add(Box.createVerticalStrut(20));
 
-            panel.add(crearSeccionTexto("DIAGNÓSTICO", 
-                historiaActual.getDiagnostico() != null ? 
+            panel.add(crearSeccionTexto("DIAGNÓSTICO",
+                historiaActual.getDiagnostico() != null ?
                     historiaActual.getDiagnostico() : "No especificado"));
 
             panel.add(Box.createVerticalStrut(20));
 
-            panel.add(crearSeccionTexto("TRATAMIENTO", 
-                historiaActual.getTratamiento() != null ? 
+            panel.add(crearSeccionTexto("PLAN DE INTERVENCIÓN",
+                historiaActual.getTratamiento() != null ?
                     historiaActual.getTratamiento() : "No especificado"));
 
             panel.add(Box.createVerticalStrut(20));
 
             if (historiaActual.getUltimaActualizacion() != null) {
-                JLabel lblFecha = new JLabel("Última actualización: " + 
+                JLabel lblFecha = new JLabel("Última actualización: " +
                     historiaActual.getUltimaActualizacion().format(
                         DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
                 lblFecha.setFont(Tema.TEXTO_ITALICA_CHICA);
@@ -183,7 +188,7 @@ public class DetallePaciente extends javax.swing.JFrame {
                 panel.add(lblFecha);
             }
         } else {
-            JLabel lblNoData = new JLabel("No hay información clínica registrada para este paciente");
+            JLabel lblNoData = new JLabel("No hay información de seguimiento registrada para este estudiante");
             lblNoData.setFont(Tema.TEXTO);
             lblNoData.setForeground(Tema.TEXTO_SECUNDARIO);
             panel.add(lblNoData);
@@ -204,7 +209,7 @@ public class DetallePaciente extends javax.swing.JFrame {
         panel.setBackground(Tema.FONDO);
         panel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
 
-        String[] columnas = {"ID", "Fecha", "Psicólogo", "Duración", "Estado"};
+        String[] columnas = {"ID", "Fecha", "Profesional", "Duración", "Estado"};
         DefaultTableModel modeloTabla = new DefaultTableModel(columnas, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -243,7 +248,7 @@ public class DetallePaciente extends javax.swing.JFrame {
         panel.setBackground(Tema.SUPERFICIE);
         panel.setLayout(new GridLayout(etiquetas.length, 2, 10, 10));
         panel.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createTitledBorder(titulo),
+            Tema.tituloSeccion(titulo),
             BorderFactory.createEmptyBorder(10, 10, 10, 10)
         ));
 
@@ -265,7 +270,7 @@ public class DetallePaciente extends javax.swing.JFrame {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBackground(Tema.SUPERFICIE);
         panel.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createTitledBorder(titulo),
+            Tema.tituloSeccion(titulo),
             BorderFactory.createEmptyBorder(10, 10, 10, 10)
         ));
 
@@ -285,7 +290,7 @@ public class DetallePaciente extends javax.swing.JFrame {
 
     private void cargarDatos() {
         if (pacienteActual == null) {
-            JOptionPane.showMessageDialog(this, "Paciente no encontrado", "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Estudiante no encontrado", "Error", JOptionPane.ERROR_MESSAGE);
             this.dispose();
         }
     }

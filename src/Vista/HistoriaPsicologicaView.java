@@ -23,6 +23,7 @@ public class HistoriaPsicologicaView extends javax.swing.JPanel {
     private JTextArea txtDiagnostico;
     private JTextArea txtTratamiento;
     private JLabel lblUltimaActualizacion;
+    private JLabel lblCursoSeleccionado;
     private Integer historiaIdActual;
 
     public HistoriaPsicologicaView(Runnable alVolver) {
@@ -41,29 +42,31 @@ public class HistoriaPsicologicaView extends javax.swing.JPanel {
 
     private void initComponents() {
         setLayout(new BorderLayout());
+        add(Tema.panelEncabezado("Historia Psicológica", "Antecedentes, diagnóstico y plan de intervención"),
+            BorderLayout.NORTH);
 
         JPanel mainPanel = new JPanel();
         mainPanel.setBackground(Tema.FONDO);
         mainPanel.setLayout(new BorderLayout(10, 10));
         mainPanel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
 
-        // Header
-        JLabel lblTitulo = new JLabel("Historia Psicológica");
-        lblTitulo.setFont(Tema.SUBTITULO);
-        lblTitulo.setForeground(Tema.TEXTO_PRIMARIO);
-
+        // Selector de estudiante
         JPanel headerPanel = new JPanel(new BorderLayout());
         headerPanel.setBackground(Tema.SUPERFICIE);
-        headerPanel.add(lblTitulo, BorderLayout.WEST);
 
-        JLabel lblSelectPaciente = new JLabel("Seleccionar Paciente:");
+        JLabel lblSelectPaciente = new JLabel("Seleccionar Estudiante:");
         comboPaciente = new JComboBox<>();
         comboPaciente.addActionListener(e -> cargarHistoria());
+
+        lblCursoSeleccionado = new JLabel();
+        lblCursoSeleccionado.setFont(Tema.TEXTO_ITALICA_CHICA);
+        lblCursoSeleccionado.setForeground(Tema.TEXTO_SECUNDARIO);
 
         JPanel selectorPanel = new JPanel();
         selectorPanel.setBackground(Tema.SUPERFICIE);
         selectorPanel.add(lblSelectPaciente);
         selectorPanel.add(comboPaciente);
+        selectorPanel.add(lblCursoSeleccionado);
         headerPanel.add(selectorPanel, BorderLayout.EAST);
 
         mainPanel.add(headerPanel, BorderLayout.NORTH);
@@ -84,7 +87,7 @@ public class HistoriaPsicologicaView extends javax.swing.JPanel {
         txtAntecedentes.setWrapStyleWord(true);
         panelGeneral.add(new JScrollPane(txtAntecedentes));
 
-        panelGeneral.add(new JLabel("Motivo de Consulta:"));
+        panelGeneral.add(new JLabel("Motivo de la Atención:"));
         txtMotivoConsulta = new JTextArea(5, 30);
         txtMotivoConsulta.setLineWrap(true);
         txtMotivoConsulta.setWrapStyleWord(true);
@@ -109,13 +112,13 @@ public class HistoriaPsicologicaView extends javax.swing.JPanel {
         txtDiagnostico.setWrapStyleWord(true);
         panelDiagnostico.add(new JScrollPane(txtDiagnostico));
 
-        panelDiagnostico.add(new JLabel("Plan de Tratamiento:"));
+        panelDiagnostico.add(new JLabel("Plan de Intervención:"));
         txtTratamiento = new JTextArea(6, 40);
         txtTratamiento.setLineWrap(true);
         txtTratamiento.setWrapStyleWord(true);
         panelDiagnostico.add(new JScrollPane(txtTratamiento));
 
-        tabbedPane.addTab("Diagnóstico y Tratamiento", panelDiagnostico);
+        tabbedPane.addTab("Diagnóstico y Plan de Intervención", panelDiagnostico);
 
         mainPanel.add(tabbedPane, BorderLayout.CENTER);
 
@@ -153,7 +156,9 @@ public class HistoriaPsicologicaView extends javax.swing.JPanel {
     private void cargarPacientes() {
         comboPaciente.removeAllItems();
         try {
-            List<Paciente> pacientes = pacienteDAO.obtenerTodos();
+            List<Paciente> pacientes = util.Sesion.esPsicologo()
+                ? pacienteDAO.obtenerPorPsicologo(util.Sesion.getUsuarioId())
+                : pacienteDAO.obtenerTodos();
             for (Paciente p : pacientes) {
                 comboPaciente.addItem(p);
             }
@@ -166,6 +171,8 @@ public class HistoriaPsicologicaView extends javax.swing.JPanel {
         try {
             Paciente p = (Paciente) comboPaciente.getSelectedItem();
             if (p == null) return;
+
+            lblCursoSeleccionado.setText(p.getCurso() != null ? "Curso: " + p.getCurso() : "");
 
             HistoriaPsicologica historia = historiaDAO.obtenerPorPaciente(p.getId());
 
@@ -198,7 +205,7 @@ public class HistoriaPsicologicaView extends javax.swing.JPanel {
     private void guardarHistoria() {
         Paciente p = (Paciente) comboPaciente.getSelectedItem();
         if (p == null) {
-            JOptionPane.showMessageDialog(this, "Seleccione un paciente", "Advertencia", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Seleccione un estudiante", "Advertencia", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
@@ -238,7 +245,7 @@ public class HistoriaPsicologicaView extends javax.swing.JPanel {
 
     private void verHistorialCambios() {
         if (historiaIdActual == null) {
-            JOptionPane.showMessageDialog(this, "Este paciente todavía no tiene historia clínica guardada", "Información", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Este estudiante todavía no tiene historia clínica guardada", "Información", JOptionPane.INFORMATION_MESSAGE);
             return;
         }
 
@@ -279,7 +286,7 @@ public class HistoriaPsicologicaView extends javax.swing.JPanel {
         try {
             Paciente p = (Paciente) comboPaciente.getSelectedItem();
             if (p == null) {
-                JOptionPane.showMessageDialog(this, "Seleccione un paciente", "Advertencia", JOptionPane.WARNING_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Seleccione un estudiante", "Advertencia", JOptionPane.WARNING_MESSAGE);
                 return;
             }
 

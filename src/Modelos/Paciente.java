@@ -12,6 +12,7 @@ public class Paciente {
     private String genero;
     private String direccion;
     private String motivoConsulta;
+    private String curso;
     private String antecedentesPersonales;
     private String antecedenteFamiliares;
     private String anamnesis;
@@ -53,6 +54,9 @@ public class Paciente {
     public String getMotivoConsulta() { return motivoConsulta; }
     public void setMotivoConsulta(String motivoConsulta) { this.motivoConsulta = motivoConsulta; }
 
+    public String getCurso() { return curso; }
+    public void setCurso(String curso) { this.curso = curso; }
+
     public String getAntecedentesPersonales() { return antecedentesPersonales; }
     public void setAntecedentesPersonales(String antecedentesPersonales) { this.antecedentesPersonales = antecedentesPersonales; }
 
@@ -67,6 +71,8 @@ public class Paciente {
 
     @Override
     public String toString() {
-        return nombre + " " + apellido;
+        return (curso != null && !curso.isEmpty())
+            ? nombre + " " + apellido + " — " + curso
+            : nombre + " " + apellido;
     }
 }

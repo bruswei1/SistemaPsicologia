@@ -2,9 +2,15 @@ package Vista;
 
 import conexion.Conexion;
 import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.GradientPaint;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.GridLayout;
 import java.awt.Insets;
+import java.awt.RenderingHints;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -27,7 +33,7 @@ public class Login extends javax.swing.JFrame {
     private JButton btnLogin;
 
     public Login() {
-        setTitle("Iniciar sesión — Sistema de Psicología");
+        setTitle("Iniciar sesión — Departamento de Psicología · Colegio San Roque González");
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setResizable(false);
         setIconImage(Tema.iconoApp());
@@ -40,22 +46,11 @@ public class Login extends javax.swing.JFrame {
 
     private void initComponents() {
 
-        JLabel lblTitulo = new JLabel("Sistema de Psicología", SwingConstants.CENTER);
-        lblTitulo.setFont(Tema.TITULO);
-        lblTitulo.setForeground(Tema.TEXTO_PRIMARIO);
-
-        JLabel lblSubtitulo = new JLabel("Iniciar sesión", SwingConstants.CENTER);
-        lblSubtitulo.setFont(Tema.TEXTO);
-        lblSubtitulo.setForeground(Tema.TEXTO_SECUNDARIO);
-
-        JPanel panelTitulo = new JPanel(new java.awt.GridLayout(2, 1, 0, 4));
-        panelTitulo.setBackground(Tema.SUPERFICIE);
-        panelTitulo.add(lblTitulo);
-        panelTitulo.add(lblSubtitulo);
-        panelTitulo.setBorder(BorderFactory.createEmptyBorder(0, 0, 20, 0));
+        JPanel panelHero = crearPanelHero();
 
         JPanel panelForm = new JPanel(new GridBagLayout());
         panelForm.setBackground(Tema.SUPERFICIE);
+        panelForm.setBorder(BorderFactory.createEmptyBorder(28, 44, 36, 44));
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(6, 6, 6, 6);
         gbc.fill = GridBagConstraints.HORIZONTAL;
@@ -99,11 +94,49 @@ public class Login extends javax.swing.JFrame {
 
         JPanel panelContenido = new JPanel(new BorderLayout());
         panelContenido.setBackground(Tema.SUPERFICIE);
-        panelContenido.setBorder(BorderFactory.createEmptyBorder(36, 44, 36, 44));
-        panelContenido.add(panelTitulo, BorderLayout.NORTH);
+        panelContenido.add(panelHero, BorderLayout.NORTH);
         panelContenido.add(panelForm, BorderLayout.CENTER);
 
         getContentPane().add(panelContenido, BorderLayout.CENTER);
+    }
+
+    /** Franja superior con degradé de marca (mismos colores del cartel real del Departamento). */
+    private JPanel crearPanelHero() {
+        JPanel panel = new JPanel(new BorderLayout()) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setPaint(new GradientPaint(0, 0, Tema.SECUNDARIO, getWidth(), getHeight(), Tema.PRIMARIO));
+                g2.fillRect(0, 0, getWidth(), getHeight());
+                g2.dispose();
+                super.paintComponent(g);
+            }
+        };
+        panel.setOpaque(false);
+        panel.setBorder(BorderFactory.createEmptyBorder(40, 40, 32, 40));
+
+        JLabel lblTitulo = new JLabel("Departamento de Psicología", SwingConstants.CENTER);
+        lblTitulo.setFont(Tema.TITULO);
+        lblTitulo.setForeground(Color.WHITE);
+
+        JLabel lblInstitucion = new JLabel(
+            "Colegio Nacional E.M.D. San Roque González de Santacruz", SwingConstants.CENTER);
+        lblInstitucion.setFont(Tema.TEXTO_CHICO);
+        lblInstitucion.setForeground(new Color(255, 255, 255, 215));
+
+        JLabel lblSubtitulo = new JLabel("Iniciar sesión", SwingConstants.CENTER);
+        lblSubtitulo.setFont(Tema.TEXTO);
+        lblSubtitulo.setForeground(new Color(255, 255, 255, 215));
+
+        JPanel textos = new JPanel(new GridLayout(3, 1, 0, 6));
+        textos.setOpaque(false);
+        textos.add(lblTitulo);
+        textos.add(lblInstitucion);
+        textos.add(lblSubtitulo);
+
+        panel.add(textos, BorderLayout.CENTER);
+        return panel;
     }
 
     private void autenticar() {

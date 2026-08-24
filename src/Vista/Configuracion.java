@@ -74,15 +74,12 @@ public class Configuracion extends javax.swing.JPanel {
 
     private void initComponents() {
         setLayout(new BorderLayout());
+        add(Tema.panelEncabezado("Configuración", "Cuenta, preferencias, usuarios y actividad"),
+            BorderLayout.NORTH);
 
         JPanel mainPanel = new JPanel(new BorderLayout(10, 10));
         mainPanel.setBackground(Tema.FONDO);
         mainPanel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
-
-        JLabel lblTitulo = new JLabel("Configuración");
-        lblTitulo.setFont(Tema.SUBTITULO);
-        lblTitulo.setForeground(Tema.TEXTO_PRIMARIO);
-        mainPanel.add(lblTitulo, BorderLayout.NORTH);
 
         JPanel centro = new JPanel();
         centro.setBackground(Tema.FONDO);
@@ -112,7 +109,7 @@ public class Configuracion extends javax.swing.JPanel {
         JPanel panel = new JPanel(new GridBagLayout());
         panel.setBackground(Tema.SUPERFICIE);
         panel.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createTitledBorder("Mi cuenta"),
+            Tema.tituloSeccion("Mi cuenta"),
             BorderFactory.createEmptyBorder(15, 15, 15, 15)
         ));
 
@@ -132,7 +129,7 @@ public class Configuracion extends javax.swing.JPanel {
         gbc.gridx = 0;
         gbc.gridy = 0;
         gbc.gridwidth = 2;
-        JLabel lblInfo = new JLabel("Conectado como " + usuario + " (" + rol + ")");
+        JLabel lblInfo = new JLabel("Conectado como " + usuario + " (" + Tema.etiquetaRol(rol) + ")");
         lblInfo.setFont(Tema.TEXTO);
         lblInfo.setForeground(Tema.TEXTO_SECUNDARIO);
         panel.add(lblInfo, gbc);
@@ -207,7 +204,7 @@ public class Configuracion extends javax.swing.JPanel {
         JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 10));
         panel.setBackground(Tema.SUPERFICIE);
         panel.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createTitledBorder("Preferencias"),
+            Tema.tituloSeccion("Preferencias"),
             BorderFactory.createEmptyBorder(10, 15, 15, 15)
         ));
 
@@ -226,7 +223,7 @@ public class Configuracion extends javax.swing.JPanel {
         btnReportes.addActionListener(e -> abrirCarpeta("reportes"));
         panel.add(btnReportes);
 
-        JButton btnExportar = Tema.botonPrimario("Exportar pacientes (CSV)", Icono.EXPORTAR);
+        JButton btnExportar = Tema.botonPrimario("Exportar estudiantes (CSV)", Icono.EXPORTAR);
         btnExportar.addActionListener(e -> exportarPacientes());
         panel.add(btnExportar);
 
@@ -237,7 +234,7 @@ public class Configuracion extends javax.swing.JPanel {
         JPanel panel = new JPanel(new BorderLayout(10, 10));
         panel.setBackground(Tema.SUPERFICIE);
         panel.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createTitledBorder("Actividad reciente"),
+            Tema.tituloSeccion("Actividad reciente"),
             BorderFactory.createEmptyBorder(15, 15, 15, 15)
         ));
 
@@ -306,7 +303,7 @@ public class Configuracion extends javax.swing.JPanel {
         JPanel panel = new JPanel(new BorderLayout(10, 10));
         panel.setBackground(Tema.SUPERFICIE);
         panel.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createTitledBorder("Usuarios del sistema"),
+            Tema.tituloSeccion("Usuarios del sistema"),
             BorderFactory.createEmptyBorder(15, 15, 15, 15)
         ));
 
@@ -319,6 +316,7 @@ public class Configuracion extends javax.swing.JPanel {
         };
         tablaUsuarios = new JTable(modeloTabla);
         Tema.estilizarTabla(tablaUsuarios);
+        tablaUsuarios.getColumnModel().getColumn(3).setCellRenderer(Tema.rendererRol());
         tablaUsuarios.setPreferredScrollableViewportSize(new Dimension(0, 160));
         JScrollPane scrollTabla = new JScrollPane(tablaUsuarios);
         panel.add(scrollTabla, BorderLayout.CENTER);
@@ -344,6 +342,7 @@ public class Configuracion extends javax.swing.JPanel {
 
         panelAcciones.add(new JLabel("Nuevo rol:"));
         comboCambiarRol = new JComboBox<>(ROLES);
+        comboCambiarRol.setRenderer(Tema.rendererRolCombo());
         panelAcciones.add(comboCambiarRol);
         JButton btnCambiarRol = Tema.botonPrimario("Cambiar rol", Icono.EDITAR);
         btnCambiarRol.addActionListener(e -> cambiarRolSeleccionado());
@@ -352,7 +351,7 @@ public class Configuracion extends javax.swing.JPanel {
         JPanel panelFormNuevo = new JPanel(new GridLayout(2, 4, 10, 10));
         panelFormNuevo.setBackground(Tema.SUPERFICIE);
         panelFormNuevo.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createTitledBorder("Nuevo usuario"),
+            Tema.tituloSeccion("Nuevo usuario"),
             BorderFactory.createEmptyBorder(10, 10, 10, 10)
         ));
 
@@ -372,6 +371,7 @@ public class Configuracion extends javax.swing.JPanel {
 
         panelFormNuevo.add(new JLabel("Rol:"));
         comboNuevoRol = new JComboBox<>(ROLES);
+        comboNuevoRol.setRenderer(Tema.rendererRolCombo());
         panelFormNuevo.add(comboNuevoRol);
 
         JButton btnCrear = Tema.botonExito("Crear usuario", Icono.NUEVO);
@@ -484,7 +484,7 @@ public class Configuracion extends javax.swing.JPanel {
                 : pacienteDAO.obtenerTodos();
 
             if (pacientes.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "No hay pacientes para exportar", "Información", JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(this, "No hay estudiantes para exportar", "Información", JOptionPane.INFORMATION_MESSAGE);
                 return;
             }
 

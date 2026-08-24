@@ -46,7 +46,8 @@ public class MenuPrincipal extends javax.swing.JFrame {
             System.out.println("Sesión no disponible");
         }
 
-        setTitle("Sistema de Psicología — " + usuario + " (" + rol + ")");
+        setTitle("Departamento de Psicología · Colegio San Roque González — " + usuario
+            + " (" + Tema.etiquetaRol(rol) + ")");
         setIconImage(Tema.iconoApp());
         setSize(1200, 800);
         setLocationRelativeTo(null);
@@ -82,21 +83,6 @@ public class MenuPrincipal extends javax.swing.JFrame {
     }
 
     private JPanel crearHeader() {
-        JPanel panelHeader = new JPanel(new BorderLayout());
-        panelHeader.setBackground(Tema.SUPERFICIE);
-        panelHeader.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Tema.BORDE_SUAVE));
-        panelHeader.setPreferredSize(new Dimension(0, 100));
-
-        JPanel panelTextos = new JPanel();
-        panelTextos.setOpaque(false);
-        panelTextos.setLayout(new BoxLayout(panelTextos, BoxLayout.Y_AXIS));
-
-        JLabel lblTitulo = new JLabel("Sistema de Psicología");
-        lblTitulo.setFont(Tema.TITULO);
-        lblTitulo.setForeground(Tema.TEXTO_PRIMARIO);
-        lblTitulo.setBorder(BorderFactory.createEmptyBorder(15, 20, 5, 0));
-        panelTextos.add(lblTitulo);
-
         String usuarioInfo = "Usuario";
         String rolInfo = "Admin";
         try {
@@ -106,15 +92,9 @@ public class MenuPrincipal extends javax.swing.JFrame {
             // Default
         }
 
-        JLabel lblUsuario = new JLabel("Conectado como: " + usuarioInfo + " (" + rolInfo + ")");
-        lblUsuario.setFont(Tema.TEXTO_CHICO);
-        lblUsuario.setForeground(Tema.TEXTO_SECUNDARIO);
-        lblUsuario.setBorder(BorderFactory.createEmptyBorder(0, 20, 15, 0));
-        panelTextos.add(lblUsuario);
-
-        panelHeader.add(panelTextos, BorderLayout.WEST);
-
-        return panelHeader;
+        return Tema.panelEncabezado(
+            "Departamento de Psicología · Colegio San Roque González",
+            "Conectado como: " + usuarioInfo + " (" + Tema.etiquetaRol(rolInfo) + ")");
     }
 
     private JPanel crearGridOpciones() {
@@ -125,11 +105,11 @@ public class MenuPrincipal extends javax.swing.JFrame {
             Tema.ESPACIADO_GRANDE, 50, Tema.ESPACIADO_GRANDE, 50));
 
         panelContent.add(new TarjetaMenu(Icono.PACIENTES, Tema.ACENTO_AZUL,
-            "Pacientes", "Registrar y gestionar\npacientes",
+            "Estudiantes", "Registrar y gestionar\nestudiantes",
             this::mostrarPacientes));
 
         panelContent.add(new TarjetaMenu(Icono.SESIONES, Tema.ACENTO_MORADO,
-            "Sesiones", "Registrar notas clínicas\nde sesiones",
+            "Atenciones", "Registrar atenciones\npsicológicas",
             this::mostrarSesiones));
 
         panelContent.add(new TarjetaMenu(Icono.HISTORIA, Tema.ACENTO_AMBAR,
@@ -137,7 +117,7 @@ public class MenuPrincipal extends javax.swing.JFrame {
             this::mostrarHistoria));
 
         panelContent.add(new TarjetaMenu(Icono.DASHBOARD, Tema.ACENTO_CELESTE,
-            "Dashboard", "Estadísticas y\nreportes",
+            "Panel General", "Estadísticas y\nreportes",
             this::mostrarDashboard));
 
         panelContent.add(new TarjetaMenu(Icono.AGENDA, Tema.ACENTO_ROSA,
@@ -175,7 +155,7 @@ public class MenuPrincipal extends javax.swing.JFrame {
 
         if (esSecretaria) {
             JOptionPane.showMessageDialog(this,
-                "Las notas clínicas no están disponibles para secretarias",
+                "Las notas de atención no están disponibles para usuarios autorizados",
                 "Acceso denegado", JOptionPane.WARNING_MESSAGE);
             return;
         }
@@ -190,6 +170,20 @@ public class MenuPrincipal extends javax.swing.JFrame {
     }
 
     private void mostrarHistoria() {
+        boolean esSecretaria;
+        try {
+            esSecretaria = util.Sesion.esSecretaria();
+        } catch (Exception e) {
+            esSecretaria = false;
+        }
+
+        if (esSecretaria) {
+            JOptionPane.showMessageDialog(this,
+                "La historia psicológica no está disponible para usuarios autorizados",
+                "Acceso denegado", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
         if (panelHistoria == null) {
             panelHistoria = new HistoriaPsicologicaView(this::mostrarInicio);
             contenedor.add(panelHistoria, "historia");

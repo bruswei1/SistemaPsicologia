@@ -99,8 +99,8 @@ public class Agenda extends JPanel {
         txtNotas = new JTextField(20);
 
         int fila = 0;
-        agregarCampo(panelForm, gbc, fila++, "Paciente*", cmbPaciente);
-        agregarCampo(panelForm, gbc, fila++, "Psicólogo*", cmbPsicologo);
+        agregarCampo(panelForm, gbc, fila++, "Estudiante*", cmbPaciente);
+        agregarCampo(panelForm, gbc, fila++, "Profesional de Psicología*", cmbPsicologo);
         agregarCampo(panelForm, gbc, fila++, "Fecha y hora*", spinnerFechaHora);
         agregarCampo(panelForm, gbc, fila++, "Duración (min)", cmbDuracion);
         agregarCampo(panelForm, gbc, fila++, "Estado", cmbEstado);
@@ -109,7 +109,7 @@ public class Agenda extends JPanel {
         JButton btnGuardar = Tema.botonExito("Guardar", Icono.GUARDAR);
         btnGuardar.addActionListener(evt -> guardarTurno());
 
-        JButton btnNuevo = Tema.botonPrimario("Nuevo turno", Icono.NUEVO);
+        JButton btnNuevo = Tema.botonPrimario("Nueva cita", Icono.NUEVO);
         btnNuevo.addActionListener(evt -> limpiarCampos());
 
         JButton btnEliminar = Tema.botonPeligro("Eliminar", Icono.ELIMINAR);
@@ -138,7 +138,7 @@ public class Agenda extends JPanel {
         panelBotones.add(btnVolver);
 
         modeloTabla = new DefaultTableModel(
-            new Object[]{"ID", "Paciente", "Psicólogo", "Fecha y hora", "Duración", "Estado"}, 0
+            new Object[]{"ID", "Estudiante", "Curso", "Profesional", "Fecha y hora", "Duración", "Estado"}, 0
         ) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -147,11 +147,11 @@ public class Agenda extends JPanel {
         };
         tablaTurnos = new JTable(modeloTabla);
         Tema.estilizarTabla(tablaTurnos);
-        tablaTurnos.getColumnModel().getColumn(5).setCellRenderer(Tema.rendererEstado());
+        tablaTurnos.getColumnModel().getColumn(6).setCellRenderer(Tema.rendererEstado());
         tablaTurnos.getSelectionModel().addListSelectionListener(this::onSeleccionarTurno);
 
         JScrollPane scrollTabla = new JScrollPane(tablaTurnos);
-        bordeTabla = BorderFactory.createTitledBorder("Turnos");
+        bordeTabla = Tema.tituloSeccion("Citas");
         scrollTabla.setBorder(bordeTabla);
 
         panelCalendario = new PanelCalendario(this::filtrarPorDia);
@@ -166,7 +166,12 @@ public class Agenda extends JPanel {
         panelSuperior.add(panelForm, BorderLayout.CENTER);
         panelSuperior.add(panelBotones, BorderLayout.SOUTH);
 
-        add(panelSuperior, BorderLayout.NORTH);
+        JPanel panelNorte = new JPanel(new BorderLayout());
+        panelNorte.add(Tema.panelEncabezado("Agenda de Citas", "Programar y gestionar citas de estudiantes"),
+            BorderLayout.NORTH);
+        panelNorte.add(panelSuperior, BorderLayout.SOUTH);
+
+        add(panelNorte, BorderLayout.NORTH);
         add(panelVista, BorderLayout.CENTER);
     }
 
@@ -193,7 +198,7 @@ public class Agenda extends JPanel {
 
         cmbPaciente.removeAllItems();
 
-        String sql = "SELECT id, nombre, apellido FROM pacientes ";
+        String sql = "SELECT id, nombre, apellido, curso FROM pacientes ";
         if (Sesion.esPsicologo()) {
             sql += "WHERE psicologo_id = ? ";
         }
@@ -208,12 +213,13 @@ public class Agenda extends JPanel {
 
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    cmbPaciente.addItem(new PacienteItem(rs.getInt("id"), rs.getString("nombre") + " " + rs.getString("apellido")));
+                    cmbPaciente.addItem(new PacienteItem(rs.getInt("id"),
+                        rs.getString("nombre") + " " + rs.getString("apellido"), rs.getString("curso")));
                 }
             }
 
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Error al cargar pacientes: " + e.getMessage());
+            JOptionPane.showMessageDialog(this, "Error al cargar estudiantes: " + e.getMessage());
         }
     }
 
@@ -249,7 +255,7 @@ public class Agenda extends JPanel {
         PsicologoItem psicologo = (PsicologoItem) cmbPsicologo.getSelectedItem();
 
         if (paciente == null || psicologo == null) {
-            JOptionPane.showMessageDialog(this, "Selecciona paciente y psicólogo");
+            JOptionPane.showMessageDialog(this, "Seleccioná estudiante y profesional");
             return;
         }
 
@@ -262,8 +268,8 @@ public class Agenda extends JPanel {
 
         if (hayTurnoSolapado(psicologo.id, fechaHora, duracion, esEdicion ? turnoIdActual : null)) {
             int opcion = JOptionPane.showConfirmDialog(this,
-                "Este horario se superpone con otro turno de " + psicologo.nombre + ". ¿Guardar de todos modos?",
-                "Turnos superpuestos", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+                "Este horario se superpone con otra cita de " + psicologo.nombre + ". ¿Guardar de todos modos?",
+                "Citas superpuestas", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
             if (opcion != JOptionPane.YES_OPTION) {
                 return;
             }
@@ -310,7 +316,7 @@ public class Agenda extends JPanel {
                 }
             }
 
-            JOptionPane.showMessageDialog(this, esEdicion ? "Turno actualizado" : "Turno agendado");
+            JOptionPane.showMessageDialog(this, esEdicion ? "Cita actualizada" : "Cita agendada");
             limpiarCampos();
 
         } catch (Exception e) {
@@ -320,12 +326,12 @@ public class Agenda extends JPanel {
 
     private void eliminarTurno() {
         if (turnoIdActual == null) {
-            JOptionPane.showMessageDialog(this, "Seleccioná un turno de la tabla para eliminar");
+            JOptionPane.showMessageDialog(this, "Seleccioná una cita de la tabla para eliminar");
             return;
         }
 
-        int opcion = JOptionPane.showConfirmDialog(this, "¿Eliminar definitivamente este turno?",
-            "Eliminar turno", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+        int opcion = JOptionPane.showConfirmDialog(this, "¿Eliminar definitivamente esta cita?",
+            "Eliminar cita", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
         if (opcion != JOptionPane.YES_OPTION) {
             return;
         }
@@ -343,12 +349,12 @@ public class Agenda extends JPanel {
 
             Auditoria.registrar(cn, "ELIMINAR_TURNO", "turnos", turnoIdActual, null);
 
-            JOptionPane.showMessageDialog(this, "Turno eliminado");
+            JOptionPane.showMessageDialog(this, "Cita eliminada");
             limpiarCampos();
 
         } catch (java.sql.SQLIntegrityConstraintViolationException e) {
             JOptionPane.showMessageDialog(this,
-                "No se puede eliminar: este turno tiene una sesión registrada. Cambiá el estado a \"cancelado\" en vez de borrarlo.");
+                "No se puede eliminar: esta cita tiene una atención registrada. Cambiá el estado a \"cancelado\" en vez de borrarla.");
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, "Error: " + e.getMessage());
         }
@@ -358,11 +364,11 @@ public class Agenda extends JPanel {
 
         modeloTabla.setRowCount(0);
         bordeTabla.setTitle(filtroDia != null
-            ? "Turnos del " + filtroDia.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) + " (clic en \"Quitar filtro\" en el calendario para ver todos)"
-            : "Turnos");
+            ? "Citas del " + filtroDia.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) + " (clic en \"Quitar filtro\" en el calendario para ver todas)"
+            : "Citas");
 
         StringBuilder sqlBuilder = new StringBuilder(
-            "SELECT t.id, CONCAT(p.nombre,' ',p.apellido) AS paciente, u.nombre AS psicologo, t.fecha_hora, t.duracion_minutos, t.estado "
+            "SELECT t.id, CONCAT(p.nombre,' ',p.apellido) AS paciente, p.curso AS curso, u.nombre AS psicologo, t.fecha_hora, t.duracion_minutos, t.estado "
             + "FROM turnos t JOIN pacientes p ON p.id = t.paciente_id JOIN usuarios u ON u.id = t.psicologo_id WHERE 1=1 ");
 
         if (Sesion.esPsicologo()) {
@@ -394,6 +400,7 @@ public class Agenda extends JPanel {
                         modeloTabla.addRow(new Object[]{
                             rs.getInt("id"),
                             rs.getString("paciente"),
+                            rs.getString("curso") != null ? rs.getString("curso") : "N/A",
                             rs.getString("psicologo"),
                             rs.getTimestamp("fecha_hora"),
                             rs.getInt("duracion_minutos"),
@@ -404,7 +411,7 @@ public class Agenda extends JPanel {
             }
 
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Error al cargar turnos: " + e.getMessage());
+            JOptionPane.showMessageDialog(this, "Error al cargar citas: " + e.getMessage());
         }
     }
 
@@ -448,7 +455,7 @@ public class Agenda extends JPanel {
             }
 
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Error al cargar el turno: " + e.getMessage());
+            JOptionPane.showMessageDialog(this, "Error al cargar la cita: " + e.getMessage());
         }
     }
 
@@ -521,15 +528,17 @@ public class Agenda extends JPanel {
     private static class PacienteItem {
         final int id;
         final String nombre;
+        final String curso;
 
-        PacienteItem(int id, String nombre) {
+        PacienteItem(int id, String nombre, String curso) {
             this.id = id;
             this.nombre = nombre;
+            this.curso = curso;
         }
 
         @Override
         public String toString() {
-            return nombre;
+            return (curso != null && !curso.isEmpty()) ? nombre + " — " + curso : nombre;
         }
     }
 
@@ -574,7 +583,7 @@ public class Agenda extends JPanel {
                 mesActual = mesActual.plusMonths(1);
                 refrescar();
             });
-            JButton btnQuitarFiltro = Tema.botonPrimario("Ver todos los turnos");
+            JButton btnQuitarFiltro = Tema.botonPrimario("Ver todas las citas");
             btnQuitarFiltro.addActionListener(e -> alSeleccionarDia.accept(null));
 
             lblMes = new JLabel("");
@@ -651,7 +660,7 @@ public class Agenda extends JPanel {
             celda.add(lblDia, BorderLayout.NORTH);
 
             if (cantidadTurnos > 0) {
-                JLabel lblCantidad = new JLabel(cantidadTurnos + (cantidadTurnos == 1 ? " turno" : " turnos"));
+                JLabel lblCantidad = new JLabel(cantidadTurnos + (cantidadTurnos == 1 ? " cita" : " citas"));
                 lblCantidad.setFont(Tema.TEXTO_ITALICA_CHICA);
                 lblCantidad.setForeground(Tema.ACENTO_AZUL.icono);
                 lblCantidad.setHorizontalAlignment(JLabel.CENTER);
