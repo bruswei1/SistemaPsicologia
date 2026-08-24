@@ -168,38 +168,40 @@ public class HistoriaPsicologicaView extends javax.swing.JPanel {
     }
 
     private void cargarHistoria() {
-        try {
-            Paciente p = (Paciente) comboPaciente.getSelectedItem();
-            if (p == null) return;
+        Paciente p = (Paciente) comboPaciente.getSelectedItem();
+        if (p == null) return;
 
-            lblCursoSeleccionado.setText(p.getCurso() != null ? "Curso: " + p.getCurso() : "");
+        lblCursoSeleccionado.setText(p.getCurso() != null ? "Curso: " + p.getCurso() : "");
 
-            HistoriaPsicologica historia = historiaDAO.obtenerPorPaciente(p.getId());
+        Tema.conCursorEspera(this, () -> {
+            try {
+                HistoriaPsicologica historia = historiaDAO.obtenerPorPaciente(p.getId());
 
-            if (historia != null) {
-                historiaIdActual = historia.getId();
-                txtAntecedentes.setText(historia.getAntecedentes() != null ? historia.getAntecedentes() : "");
-                txtMotivoConsulta.setText(historia.getMotivoConsulta() != null ? historia.getMotivoConsulta() : "");
-                txtObservaciones.setText(historia.getObservacionesGenerales() != null ? historia.getObservacionesGenerales() : "");
-                txtDiagnostico.setText(historia.getDiagnostico() != null ? historia.getDiagnostico() : "");
-                txtTratamiento.setText(historia.getTratamiento() != null ? historia.getTratamiento() : "");
+                if (historia != null) {
+                    historiaIdActual = historia.getId();
+                    txtAntecedentes.setText(historia.getAntecedentes() != null ? historia.getAntecedentes() : "");
+                    txtMotivoConsulta.setText(historia.getMotivoConsulta() != null ? historia.getMotivoConsulta() : "");
+                    txtObservaciones.setText(historia.getObservacionesGenerales() != null ? historia.getObservacionesGenerales() : "");
+                    txtDiagnostico.setText(historia.getDiagnostico() != null ? historia.getDiagnostico() : "");
+                    txtTratamiento.setText(historia.getTratamiento() != null ? historia.getTratamiento() : "");
 
-                if (historia.getUltimaActualizacion() != null) {
-                    lblUltimaActualizacion.setText("Última actualización: " + historia.getUltimaActualizacion());
+                    if (historia.getUltimaActualizacion() != null) {
+                        lblUltimaActualizacion.setText("Última actualización: " + historia.getUltimaActualizacion());
+                    }
+
+                    try (Connection cn = new conexion.Conexion().conectar()) {
+                        Auditoria.registrar(cn, "VER_HISTORIA", "historia_psicologica", historiaIdActual, null);
+                    } catch (Exception ex) {
+                        System.out.println("Error registrando auditoría: " + ex.getMessage());
+                    }
+                } else {
+                    historiaIdActual = null;
+                    limpiarFormulario();
                 }
-
-                try (Connection cn = new conexion.Conexion().conectar()) {
-                    Auditoria.registrar(cn, "VER_HISTORIA", "historia_psicologica", historiaIdActual, null);
-                } catch (Exception ex) {
-                    System.out.println("Error registrando auditoría: " + ex.getMessage());
-                }
-            } else {
-                historiaIdActual = null;
-                limpiarFormulario();
+            } catch (Exception e) {
+                System.out.println("Error cargando historia: " + e.getMessage());
             }
-        } catch (Exception e) {
-            System.out.println("Error cargando historia: " + e.getMessage());
-        }
+        });
     }
 
     private void guardarHistoria() {

@@ -3,14 +3,10 @@ package Vista;
 import conexion.Conexion;
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.GradientPaint;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.Insets;
-import java.awt.RenderingHints;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -102,18 +98,7 @@ public class Login extends javax.swing.JFrame {
 
     /** Franja superior con degradé de marca (mismos colores del cartel real del Departamento). */
     private JPanel crearPanelHero() {
-        JPanel panel = new JPanel(new BorderLayout()) {
-            @Override
-            protected void paintComponent(Graphics g) {
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setPaint(new GradientPaint(0, 0, Tema.SECUNDARIO, getWidth(), getHeight(), Tema.PRIMARIO));
-                g2.fillRect(0, 0, getWidth(), getHeight());
-                g2.dispose();
-                super.paintComponent(g);
-            }
-        };
-        panel.setOpaque(false);
+        JPanel panel = Tema.panelDegradado();
         panel.setBorder(BorderFactory.createEmptyBorder(40, 40, 32, 40));
 
         JLabel lblTitulo = new JLabel("Departamento de Psicología", SwingConstants.CENTER);

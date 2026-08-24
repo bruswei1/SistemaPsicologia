@@ -74,7 +74,7 @@ public class Sesiones extends JPanel {
         cmbTurno = new JComboBox<>();
 
         lblCronometro = new JLabel("00:00");
-        lblCronometro.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        lblCronometro.setFont(Tema.fuente(Font.BOLD, 18));
         lblCronometro.setForeground(Tema.PRIMARIO);
         btnIniciar = Tema.botonExito("Iniciar atención");
         btnDetener = Tema.botonPeligro("Pausar");

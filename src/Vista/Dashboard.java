@@ -265,7 +265,7 @@ public class Dashboard extends javax.swing.JPanel {
             g2.drawString(titulo, 20, 90);
 
             g2.setColor(color);
-            g2.setFont(new Font("Segoe UI", Font.BOLD, 46));
+            g2.setFont(Tema.fuente(Font.BOLD, 46));
             g2.drawString(numero, 20, 140);
         }
     }

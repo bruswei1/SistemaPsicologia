@@ -97,6 +97,11 @@ public final class Tema {
     public static final Font TEXTO_ITALICA_CHICA = new Font(FAMILIA, Font.ITALIC, 10);
     public static final Font BOTON = new Font(FAMILIA, Font.BOLD, 12);
 
+    /** Fuente de marca en un estilo/tamaño puntual no cubierto por las constantes de arriba. */
+    public static Font fuente(int estilo, int tamano) {
+        return new Font(FAMILIA, estilo, tamano);
+    }
+
     // Espaciado
     public static final int ESPACIADO_CHICO = 10;
     public static final int ESPACIADO_MEDIANO = 20;
@@ -262,7 +267,13 @@ public final class Tema {
      * título en blanco y subtítulo opcional en blanco semi-transparente. Reemplaza el header
      * blanco liso que cada pantalla armaba a mano.
      */
-    public static JPanel panelEncabezado(String titulo, String subtitulo) {
+    /**
+     * `JPanel` liso con el degradé de marca {@link #SECUNDARIO} → {@link #PRIMARIO} pintado de
+     * fondo (mismos colores del cartel real del Departamento), sin contenido propio. Base
+     * compartida de {@link #panelEncabezado(String, String)} y de cualquier otra franja/hero con
+     * degradé — evita reimplementar el `paintComponent` con `GradientPaint` en cada pantalla.
+     */
+    public static JPanel panelDegradado() {
         JPanel panel = new JPanel(new BorderLayout()) {
             @Override
             protected void paintComponent(Graphics g) {
@@ -275,6 +286,11 @@ public final class Tema {
             }
         };
         panel.setOpaque(false);
+        return panel;
+    }
+
+    public static JPanel panelEncabezado(String titulo, String subtitulo) {
+        JPanel panel = panelDegradado();
         panel.setPreferredSize(new Dimension(0, subtitulo != null && !subtitulo.isEmpty() ? 92 : 72));
         panel.setBorder(BorderFactory.createEmptyBorder(16, 24, 16, 24));
 

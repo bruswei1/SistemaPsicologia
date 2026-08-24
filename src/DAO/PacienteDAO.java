@@ -372,8 +372,8 @@ public class PacienteDAO extends DAO {
             + "GROUP BY curso ORDER BY curso";
 
         try (Connection con = obtenerConexion();
-             Statement st = con.createStatement();
-             ResultSet rs = st.executeQuery(sql)) {
+             PreparedStatement pst = con.prepareStatement(sql);
+             ResultSet rs = pst.executeQuery()) {
 
             while (rs.next()) {
                 resultado.put(rs.getString("curso"), rs.getInt("total"));
