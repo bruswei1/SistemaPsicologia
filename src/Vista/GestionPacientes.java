@@ -134,7 +134,6 @@ public class GestionPacientes extends javax.swing.JPanel {
 
         JScrollPane scrollPane = new JScrollPane(tablaPacientes);
         scrollPane.setBorder(Tema.tituloSeccion("Estudiantes Registrados (doble clic para ver detalles)"));
-        mainPanel.add(scrollPane, BorderLayout.CENTER);
 
         // Panel de registro
         JPanel panelRegistro = new JPanel();
@@ -214,7 +213,27 @@ public class GestionPacientes extends javax.swing.JPanel {
         JPanel panelSur = new JPanel(new BorderLayout());
         panelSur.add(panelFormulario, BorderLayout.CENTER);
         panelSur.add(footerPanel, BorderLayout.SOUTH);
-        mainPanel.add(panelSur, BorderLayout.SOUTH);
+
+        // El formulario "Nuevo Estudiante" + selector de curso/sección puede ser más alto que el
+        // espacio disponible. Con BorderLayout.SOUTH puro, cuando NORTE+SUR superan el alto del
+        // contenedor, SUR se posiciona desde abajo hacia arriba y termina superponiéndose sobre
+        // la tabla en vez de empujarla (BorderLayout no evita el solapamiento). Un JSplitPane sí
+        // lo evita: reparte el espacio entre tabla y formulario sin solaparlos nunca, y deja que
+        // el usuario arrastre el divisor o haga scroll dentro del formulario si hace falta.
+        JScrollPane scrollPanelSur = new JScrollPane(panelSur);
+        scrollPanelSur.setBorder(BorderFactory.createEmptyBorder());
+        scrollPanelSur.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        scrollPanelSur.getVerticalScrollBar().setUnitIncrement(16);
+        scrollPanelSur.setMinimumSize(new Dimension(0, 160));
+        scrollPane.setMinimumSize(new Dimension(0, 120));
+
+        JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, scrollPane, scrollPanelSur);
+        splitPane.setResizeWeight(0.55);
+        splitPane.setContinuousLayout(true);
+        splitPane.setBorder(null);
+        splitPane.setDividerLocation(0.55);
+
+        mainPanel.add(splitPane, BorderLayout.CENTER);
 
         add(mainPanel, BorderLayout.CENTER);
     }
