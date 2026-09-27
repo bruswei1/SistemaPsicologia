@@ -1,0 +1,18 @@
+# Copiar este archivo como "conexion.properties" (sin .example) en la misma
+# carpeta donde se ejecuta SistemaPsicologia.jar / SistemaPsicologia.exe,
+# para conectar a una base de datos distinta a la de desarrollo (localhost)
+# sin tener que recompilar el proyecto.
+#
+# Si este archivo no existe, la aplicacion usa los valores de siempre:
+# localhost:3306/psicologia, usuario root, sin password.
+
+db.host=localhost
+db.puerto=3306
+db.nombre=psicologia
+db.usuario=root
+db.password=
+
+# Parametros extra opcionales para la URL JDBC (por ejemplo, para exigir SSL
+# al conectar a una base en la nube). Dejar vacio para uso local normal.
+# Ejemplo: useSSL=true&requireSSL=true
+db.parametros=

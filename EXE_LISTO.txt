@@ -1,0 +1,179 @@
+========================================
+✅ ARCHIVO EXE LISTO
+Sistema de Psicología
+========================================
+
+## 📍 UBICACIÓN DEL ARCHIVO EXE
+
+```
+C:\Users\bru\OneDrive\Documentos\NetBeansProjects\SistemaPsicologia\dist\SistemaPsicologia.exe
+```
+
+## 🚀 CÓMO EJECUTAR
+
+### Opción 1: Doble clic (RECOMENDADO)
+Simplemente haz doble clic en:
+- `SistemaPsicologia.exe`
+
+### Opción 2: Desde PowerShell
+```powershell
+cd "C:\Users\bru\OneDrive\Documentos\NetBeansProjects\SistemaPsicologia\dist"
+.\SistemaPsicologia.exe
+```
+
+### Opción 3: Desde CMD
+```cmd
+cd "C:\Users\bru\OneDrive\Documentos\NetBeansProjects\SistemaPsicologia\dist"
+SistemaPsicologia.exe
+```
+
+---
+
+## ✅ REQUISITOS ANTES DE EJECUTAR
+
+1. **MySQL debe estar corriendo:**
+```powershell
+cd "C:\Users\bru\OneDrive\Documentos\NetBeansProjects\SistemaPsicologia"
+docker-compose up -d
+```
+
+2. **Java 8 o superior instalado**
+Verifica con:
+```powershell
+java -version
+```
+
+---
+
+## 🔐 CREDENCIALES DE PRUEBA
+
+| Usuario | Contraseña | Rol |
+|---------|-----------|-----|
+| admin | admin123 | Administrador |
+| psicologo | psico123 | Psicólogo |
+| secretaria | secre123 | Secretaria |
+
+---
+
+## 📂 ARCHIVOS EN LA CARPETA DIST
+
+```
+C:\Users\bru\OneDrive\Documentos\NetBeansProjects\SistemaPsicologia\dist\
+
+├── SistemaPsicologia.exe       ← 🎯 EXE EJECUTABLE (1.2 KB)
+├── SistemaPsicologia.jar       ← JAR compilado (440 KB)
+├── SistemaPsicologia.exe.bat   ← Script batch
+├── lib/                        ← Librerías Java
+└── README.TXT                  ← Información adicional
+```
+
+---
+
+## 🎯 CARACTERÍSTICAS INCLUIDAS
+
+✅ Autenticación con roles (admin, psicólogo, secretaria)
+✅ Gestión de pacientes (registrar, buscar, modificar, eliminar)
+✅ Búsqueda avanzada con detalles completos
+✅ Gestión de turnos (crear, ver, cancelar)
+✅ Historia psicológica (antecedentes, diagnóstico, tratamiento)
+✅ Sesiones clínicas (registrar notas)
+✅ Dashboard con estadísticas en tiempo real
+✅ Exportación de reportes
+✅ Interfaz moderna con Segoe UI
+✅ Base de datos MySQL automática
+
+---
+
+## 📋 NOTAS IMPORTANTES
+
+1. **El EXE es un wrapper**
+   - El EXE es un pequeño ejecutable (1.2 KB) que lanza el JAR
+   - Requiere Java instalado en el sistema
+   - Requiere MySQL ejecutándose
+
+2. **Puedes distribuirlo**
+   - Copia el archivo SistemaPsicologia.exe a donde quieras
+   - Funciona en cualquier carpeta
+   - No necesita configuración adicional
+
+3. **Si tienes problema al ejecutar**
+   - Verifica que Java esté instalado: `java -version`
+   - Verifica que MySQL esté corriendo: `docker ps`
+   - Ejecuta como Administrador si es necesario
+   - Revisa los logs de la consola
+
+---
+
+## 🔧 SOLUCIÓN DE PROBLEMAS
+
+❌ **"Cannot find Java"**
+→ Instala Java desde: https://www.oracle.com/java/
+
+❌ **"No se puede conectar a MySQL"**
+→ Ejecuta: `docker-compose up -d`
+
+❌ **"No se encuentra el archivo JAR"**
+→ Verifica que SistemaPsicologia.jar esté en la misma carpeta
+
+❌ **"Access Denied"**
+→ Ejecuta como Administrador
+
+---
+
+## 📊 INFORMACIÓN TÉCNICA
+
+- **Lenguaje**: Java 8+
+- **Framework UI**: Swing + FlatLaf
+- **Base de Datos**: MySQL 8.0
+- **Compilador**: Ant + NetBeans
+- **Empaquetado**: Launch4j / BAT wrapper
+- **Tamaño JAR**: 440 KB
+- **Tamaño EXE**: 1.2 KB (solo wrapper)
+
+---
+
+## 📞 PRÓXIMOS PASOS
+
+1. **Ejecuta el EXE**: Doble clic en `SistemaPsicologia.exe`
+2. **Login**: Usuario `admin` / Contraseña `admin123`
+3. **Explora**: Prueba todas las funciones del sistema
+4. **Feedback**: Reporta cualquier problema
+
+---
+
+## 📁 ARCHIVOS RELACIONADOS EN EL PROYECTO
+
+```
+C:\Users\bru\OneDrive\Documentos\NetBeansProjects\SistemaPsicologia\
+
+├── SistemaPsicologia/
+│   ├── dist/
+│   │   └── SistemaPsicologia.exe  ← 🎯 EJECUTABLE AQUI
+│   ├── src/
+│   ├── docker-compose.yml
+│   ├── README.md
+│   ├── ARQUITECTURA_OFICIAL.txt
+│   └── iniciar.bat
+```
+
+---
+
+## ✅ VERIFICACIÓN FINAL
+
+Todos los archivos están listos:
+
+✅ SistemaPsicologia.exe (1.2 KB) - CREADO
+✅ SistemaPsicologia.jar (440 KB) - COMPILADO
+✅ MySQL - CONFIGURADO (docker-compose.yml)
+✅ Base de datos - PREPARADA (tablas creadas automáticamente)
+✅ Credenciales de prueba - CONFIGURADAS
+
+---
+
+**¡El sistema está listo para usar!**
+
+Ejecuta: SistemaPsicologia.exe
+
+Versión: 1.0
+Fecha: 2026
+========================================

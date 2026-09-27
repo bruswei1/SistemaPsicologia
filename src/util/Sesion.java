@@ -28,6 +28,11 @@ public final class Sesion {
         rol = null;
     }
 
+    /** true mientras hay alguien conectado (entre iniciar() y cerrar()). */
+    public static boolean estaActiva() {
+        return usuarioId != null;
+    }
+
     public static Integer getUsuarioId() {
         return usuarioId;
     }

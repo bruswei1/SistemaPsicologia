@@ -222,6 +222,68 @@ public enum Icono {
         }
     },
 
+    /** Chevron "‹" dibujado (el carácter Unicode sale como un cuadrado vacío con esta fuente). */
+    ANTERIOR {
+        public void dibujar(Graphics2D g2, int x, int y, int size, Color color) {
+            g2.setColor(color);
+            g2.setStroke(new BasicStroke(Math.max(2f, size * 0.14f), BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+            int cy = y + size / 2;
+            g2.drawLine(x + (int) (size * 0.62), y + (int) (size * 0.22), x + (int) (size * 0.36), cy);
+            g2.drawLine(x + (int) (size * 0.36), cy, x + (int) (size * 0.62), y + (int) (size * 0.78));
+        }
+    },
+
+    SIGUIENTE {
+        public void dibujar(Graphics2D g2, int x, int y, int size, Color color) {
+            g2.setColor(color);
+            g2.setStroke(new BasicStroke(Math.max(2f, size * 0.14f), BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+            int cy = y + size / 2;
+            g2.drawLine(x + (int) (size * 0.38), y + (int) (size * 0.22), x + (int) (size * 0.64), cy);
+            g2.drawLine(x + (int) (size * 0.64), cy, x + (int) (size * 0.38), y + (int) (size * 0.78));
+        }
+    },
+
+    CERRAR {
+        public void dibujar(Graphics2D g2, int x, int y, int size, Color color) {
+            g2.setColor(color);
+            g2.setStroke(new BasicStroke(Math.max(1.6f, size * 0.12f), BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+            int m = (int) (size * 0.24);
+            g2.drawLine(x + m, y + m, x + size - m, y + size - m);
+            g2.drawLine(x + size - m, y + m, x + m, y + size - m);
+        }
+    },
+
+    CARPETA {
+        public void dibujar(Graphics2D g2, int x, int y, int size, Color color) {
+            g2.setColor(color);
+            int w = (int) (size * 0.84);
+            int h = (int) (size * 0.62);
+            int px = x + (size - w) / 2;
+            int py = y + (int) (size * 0.24);
+            int arco = Math.max(2, (int) (size * 0.10));
+            // Pestaña de la carpeta + cuerpo.
+            g2.fillRoundRect(px, py - (int) (size * 0.10), (int) (w * 0.42), (int) (size * 0.20), arco, arco);
+            g2.fillRoundRect(px, py, w, h, arco, arco);
+            g2.setColor(new Color(255, 255, 255, 90));
+            g2.fillRect(px + (int) (w * 0.06), py + (int) (h * 0.22), (int) (w * 0.88), Math.max(1, (int) (size * 0.04)));
+        }
+    },
+
+    ALERTA {
+        public void dibujar(Graphics2D g2, int x, int y, int size, Color color) {
+            g2.setColor(color);
+            int[] px = {x + size / 2, x + (int) (size * 0.06), x + (int) (size * 0.94)};
+            int[] py = {y + (int) (size * 0.08), y + (int) (size * 0.90), y + (int) (size * 0.90)};
+            g2.fillPolygon(px, py, 3);
+
+            g2.setColor(Color.WHITE);
+            g2.setStroke(new BasicStroke(Math.max(2f, size * 0.10f), BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+            int cx = x + size / 2;
+            g2.drawLine(cx, y + (int) (size * 0.38), cx, y + (int) (size * 0.62));
+            g2.fillOval(cx - (int) (size * 0.05), y + (int) (size * 0.72), (int) (size * 0.10), (int) (size * 0.10));
+        }
+    },
+
     CONFIGURACION {
         public void dibujar(Graphics2D g2, int x, int y, int size, Color color) {
             g2.setColor(color);

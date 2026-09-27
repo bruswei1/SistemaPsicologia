@@ -40,7 +40,7 @@ public class SelectorCursoSeccion extends JPanel {
         setOpaque(false);
         setLayout(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(4, 4, 4, 4);
+        gbc.insets = new Insets(7, 8, 7, 8);
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.anchor = GridBagConstraints.WEST;
 
@@ -64,7 +64,7 @@ public class SelectorCursoSeccion extends JPanel {
         JPanel panelEEB = new JPanel(new GridBagLayout());
         panelEEB.setOpaque(false);
         GridBagConstraints g2 = new GridBagConstraints();
-        g2.insets = new Insets(4, 4, 4, 4);
+        g2.insets = new Insets(7, 8, 7, 8);
         g2.fill = GridBagConstraints.HORIZONTAL;
         g2.anchor = GridBagConstraints.WEST;
         g2.gridx = 0;
@@ -81,7 +81,7 @@ public class SelectorCursoSeccion extends JPanel {
         JPanel panelBachillerato = new JPanel(new GridBagLayout());
         panelBachillerato.setOpaque(false);
         GridBagConstraints g3 = new GridBagConstraints();
-        g3.insets = new Insets(4, 4, 4, 4);
+        g3.insets = new Insets(7, 8, 7, 8);
         g3.fill = GridBagConstraints.HORIZONTAL;
         g3.anchor = GridBagConstraints.WEST;
         g3.gridx = 0;

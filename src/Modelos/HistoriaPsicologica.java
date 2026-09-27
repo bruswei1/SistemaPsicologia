@@ -14,6 +14,9 @@ public class HistoriaPsicologica {
     private LocalDateTime fechaCreacion;
     private LocalDateTime ultimaActualizacion;
     private int psicologoId;
+    private String codigoCie10;
+    private String tipoAcoso;
+    private boolean esReiterado;
 
     public HistoriaPsicologica() {}
 
@@ -46,4 +49,13 @@ public class HistoriaPsicologica {
 
     public int getPsicologoId() { return psicologoId; }
     public void setPsicologoId(int psicologoId) { this.psicologoId = psicologoId; }
+
+    public String getCodigoCie10() { return codigoCie10; }
+    public void setCodigoCie10(String codigoCie10) { this.codigoCie10 = codigoCie10; }
+
+    public String getTipoAcoso() { return tipoAcoso; }
+    public void setTipoAcoso(String tipoAcoso) { this.tipoAcoso = tipoAcoso; }
+
+    public boolean isEsReiterado() { return esReiterado; }
+    public void setEsReiterado(boolean esReiterado) { this.esReiterado = esReiterado; }
 }

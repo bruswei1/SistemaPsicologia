@@ -1,0 +1,125 @@
+========================================
+COMO GENERAR EL ARCHIVO EXE
+Sistema de Psicologia
+========================================
+
+## METODO 1: Generador Automatico (Recomendado)
+
+### Paso 1: Compilar el JAR
+En NetBeans:
+- Presiona: Shift + F11 (Clean and Build)
+- Espera a que termine
+
+### Paso 2: Generar EXE
+En el Explorador de archivos, ve a:
+  C:\Users\bru\OneDrive\Documentos\NetBeansProjects\SistemaPsicologia\
+
+Haz doble clic en:
+  generar-exe.bat
+
+El archivo EXE se generará en:
+  C:\Users\bru\OneDrive\Documentos\NetBeansProjects\SistemaPsicologia\dist\SistemaPsicologia.exe
+
+### Paso 3: Usar el EXE
+- Doble clic en SistemaPsicologia.exe
+- O copia el archivo a donde quieras y ejecútalo
+
+---
+
+## METODO 2: Manual con PowerShell
+
+Si el método 1 no funciona:
+
+1. Abre PowerShell como Administrador
+2. Ve a la carpeta del proyecto:
+   cd "C:\Users\bru\OneDrive\Documentos\NetBeansProjects\SistemaPsicologia"
+
+3. Ejecuta:
+   powershell -NoProfile -ExecutionPolicy Bypass -File generar-exe.ps1
+
+---
+
+## METODO 3: Usar Launch4j (Avanzado)
+
+Si quieres más control:
+
+1. Descarga Launch4j desde:
+   https://sourceforge.net/projects/launch4j/
+
+2. Instala en: C:\Program Files (x86)\Launch4j
+
+3. Abre Launch4j y carga: launch4j.xml
+
+4. Haz clic en "Build wrapper"
+
+---
+
+## REQUISITOS
+
+1. Java 8 o superior instalado
+   Verifica con: java -version
+
+2. MySQL ejecutándose
+   Comando: docker-compose up -d
+
+3. JAR compilado (SistemaPsicologia.jar)
+   En: dist/
+
+---
+
+## UBICACIONES IMPORTANTES
+
+Proyecto:
+  C:\Users\bru\OneDrive\Documentos\NetBeansProjects\SistemaPsicologia\
+
+JAR compilado:
+  C:\Users\bru\OneDrive\Documentos\NetBeansProjects\SistemaPsicologia\dist\SistemaPsicologia.jar
+
+EXE generado:
+  C:\Users\bru\OneDrive\Documentos\NetBeansProjects\SistemaPsicologia\dist\SistemaPsicologia.exe
+
+Scripts:
+  generar-exe.bat    (ejecuta el generador)
+  generar-exe.ps1    (script PowerShell)
+  generar-exe.sh     (para Linux/Mac)
+
+---
+
+## SOLUCION DE PROBLEMAS
+
+❌ "EXE no se genera"
+→ Verifica que SistemaPsicologia.jar exista en dist/
+→ Asegúrate de compilar primero (Shift+F11)
+
+❌ "Cannot find java"
+→ Instala Java desde: https://www.oracle.com/java/
+
+❌ "No se puede ejecutar el EXE"
+→ Verifica que MySQL esté corriendo
+→ Ejecuta: docker-compose up -d
+
+❌ "Access Denied"
+→ Ejecuta como Administrador
+→ En PowerShell: Set-ExecutionPolicy RemoteSigned
+
+---
+
+## EJECUCION FINAL
+
+Una vez que tengas el EXE:
+
+1. Asegúrate de que MySQL esté corriendo:
+   docker-compose up -d
+
+2. Haz doble clic en:
+   SistemaPsicologia.exe
+
+3. Login con:
+   Usuario: admin
+   Contraseña: admin123
+
+---
+
+Versión: 1.0
+Fecha: 2026
+========================================

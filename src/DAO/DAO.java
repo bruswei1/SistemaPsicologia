@@ -47,10 +47,10 @@ public abstract class DAO {
      * Obtiene conexión de forma segura
      */
     protected Connection obtenerConexion() throws SQLException {
-        Connection con = conexion.conectar();
-        if (con == null) {
-            throw new SQLException("No se pudo establecer conexión a la base de datos");
+        try {
+            return conexion.conectar();
+        } catch (conexion.Conexion.SinConexionException e) {
+            throw new SQLException(e.getMessage(), e);
         }
-        return con;
     }
 }

@@ -1,15 +1,18 @@
 package modelos;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 public class Paciente {
     private int id;
     private String nombre;
     private String apellido;
-    private String email;
+    private String ci;
     private String telefono;
     private LocalDate fechaNacimiento;
     private String genero;
+    private String nombreTutor;
+    private String ciTutor;
     private String direccion;
     private String motivoConsulta;
     private String curso;
@@ -17,13 +20,15 @@ public class Paciente {
     private String antecedenteFamiliares;
     private String anamnesis;
     private int psicologoId;
+    private boolean consentimientoTutor;
+    private LocalDateTime consentimientoFecha;
 
     public Paciente() {}
 
-    public Paciente(String nombre, String apellido, String email, String telefono) {
+    public Paciente(String nombre, String apellido, String ci, String telefono) {
         this.nombre = nombre;
         this.apellido = apellido;
-        this.email = email;
+        this.ci = ci;
         this.telefono = telefono;
     }
 
@@ -36,8 +41,8 @@ public class Paciente {
     public String getApellido() { return apellido; }
     public void setApellido(String apellido) { this.apellido = apellido; }
 
-    public String getEmail() { return email; }
-    public void setEmail(String email) { this.email = email; }
+    public String getCi() { return ci; }
+    public void setCi(String ci) { this.ci = ci; }
 
     public String getTelefono() { return telefono; }
     public void setTelefono(String telefono) { this.telefono = telefono; }
@@ -47,6 +52,12 @@ public class Paciente {
 
     public String getGenero() { return genero; }
     public void setGenero(String genero) { this.genero = genero; }
+
+    public String getNombreTutor() { return nombreTutor; }
+    public void setNombreTutor(String nombreTutor) { this.nombreTutor = nombreTutor; }
+
+    public String getCiTutor() { return ciTutor; }
+    public void setCiTutor(String ciTutor) { this.ciTutor = ciTutor; }
 
     public String getDireccion() { return direccion; }
     public void setDireccion(String direccion) { this.direccion = direccion; }
@@ -68,6 +79,12 @@ public class Paciente {
 
     public int getPsicologoId() { return psicologoId; }
     public void setPsicologoId(int psicologoId) { this.psicologoId = psicologoId; }
+
+    public boolean isConsentimientoTutor() { return consentimientoTutor; }
+    public void setConsentimientoTutor(boolean consentimientoTutor) { this.consentimientoTutor = consentimientoTutor; }
+
+    public LocalDateTime getConsentimientoFecha() { return consentimientoFecha; }
+    public void setConsentimientoFecha(LocalDateTime consentimientoFecha) { this.consentimientoFecha = consentimientoFecha; }
 
     @Override
     public String toString() {

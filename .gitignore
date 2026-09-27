@@ -15,8 +15,15 @@
 # Generated patient reports (local output, not source)
 /reportes/
 
+# Respaldos automáticos de la base de datos (datos, no código fuente)
+/respaldos_bd/
+
 # Preferencia de tema (claro/oscuro) por instalación local
 /tema.properties
+
+# Configuracion real de conexion a la base de datos por instalacion
+# (puede contener host/usuario/password de una base ajena a este equipo)
+/conexion.properties
 
 # OS files
 Thumbs.db

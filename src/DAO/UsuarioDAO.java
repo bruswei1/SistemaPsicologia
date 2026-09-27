@@ -178,7 +178,8 @@ public class UsuarioDAO extends DAO {
         String salt = PasswordUtil.generarSalt();
         String hash = PasswordUtil.hash(passwordPlano, salt);
 
-        String sql = "INSERT INTO usuarios (usuario, password_hash, salt, nombre, rol, activo) VALUES (?, ?, ?, ?, ?, 1)";
+        // creado_en explícito con la hora de la PC (el servidor MySQL corre en UTC).
+        String sql = "INSERT INTO usuarios (usuario, password_hash, salt, nombre, rol, activo, creado_en) VALUES (?, ?, ?, ?, ?, 1, ?)";
 
         try (Connection con = obtenerConexion();
              PreparedStatement pst = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
@@ -188,6 +189,7 @@ public class UsuarioDAO extends DAO {
             pst.setString(3, salt);
             pst.setString(4, nombre.trim());
             pst.setString(5, rol);
+            pst.setTimestamp(6, Timestamp.valueOf(java.time.LocalDateTime.now()));
 
             pst.executeUpdate();
             registrarExito("Crear usuario: " + usuario);
@@ -214,7 +216,10 @@ public class UsuarioDAO extends DAO {
         String salt = PasswordUtil.generarSalt();
         String hash = PasswordUtil.hash(passwordPlano, salt);
 
-        String sql = "UPDATE usuarios SET password_hash=?, salt=? WHERE id=?";
+        // También limpia el bloqueo por intentos fallidos: si un admin restablece la contraseña
+        // de alguien que quedó bloqueado, tiene sentido que pueda entrar de inmediato con la
+        // contraseña nueva en vez de tener que esperar a que se cumplan los minutos de bloqueo.
+        String sql = "UPDATE usuarios SET password_hash=?, salt=?, intentos_fallidos=0, bloqueado_hasta=NULL WHERE id=?";
 
         try (Connection con = obtenerConexion();
              PreparedStatement pst = con.prepareStatement(sql)) {
@@ -330,7 +335,7 @@ public class UsuarioDAO extends DAO {
 
         } catch (SQLIntegrityConstraintViolationException e) {
             registrarError("eliminar usuario (referencias)", e);
-            return "No se puede eliminar: tiene pacientes, turnos, sesiones u otros registros asociados. "
+            return "No se puede eliminar: tiene estudiantes, citas, atenciones u otros registros asociados. "
                 + "Reasigná o eliminá esos datos primero, o desactivá la cuenta en vez de borrarla.";
         } catch (SQLException e) {
             registrarError("eliminar usuario", e);

@@ -100,12 +100,23 @@ public class SesionDAO {
     }
 
     public int obtenerCountSesionesCompletadasDesde(java.time.LocalDate desde) {
-        String sql = "SELECT COUNT(*) as total FROM sesiones WHERE fecha >= ?";
+        return obtenerCountSesionesCompletadasDesde(desde, null);
+    }
+
+    /** @param psicologoId si no es null, solo atenciones de estudiantes asignados a ese profesional */
+    public int obtenerCountSesionesCompletadasDesde(java.time.LocalDate desde, Integer psicologoId) {
+        String sql = psicologoId == null
+            ? "SELECT COUNT(*) as total FROM sesiones WHERE fecha >= ?"
+            : "SELECT COUNT(*) as total FROM sesiones s JOIN pacientes p ON p.id = s.paciente_id "
+                + "WHERE s.fecha >= ? AND p.psicologo_id = ?";
 
         try (Connection con = conexion.conectar();
              PreparedStatement pst = con.prepareStatement(sql)) {
 
             pst.setDate(1, Date.valueOf(desde));
+            if (psicologoId != null) {
+                pst.setInt(2, psicologoId);
+            }
             try (ResultSet rs = pst.executeQuery()) {
                 if (rs.next()) {
                     return rs.getInt("total");
