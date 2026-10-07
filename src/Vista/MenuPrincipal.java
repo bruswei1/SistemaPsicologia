@@ -26,11 +26,20 @@ public class MenuPrincipal extends javax.swing.JFrame {
     private final java.util.Set<Integer> citasAvisadas = new java.util.HashSet<>();
     private static final int MINUTOS_AVISO_PREVIO = 10;
     private Timer timerRecordatorios;
+    private BloqueoPantalla bloqueo;
 
     public MenuPrincipal() {
         construirVentana();
         habilitarAtajoPantallaCompleta();
         Tema.atajo(getRootPane(), KeyStroke.getKeyStroke("control K"), this::abrirBusquedaRapida);
+        // Bloqueo por inactividad (no mientras corre el cronómetro de una atención: el profesional
+        // puede estar hablando con el estudiante sin tocar la PC) y a mano con Ctrl+L.
+        bloqueo = new BloqueoPantalla(this,
+            () -> panelEstudiantes == null || !panelEstudiantes.hayAtencionEnCurso(),
+            this::hayCambiosSinGuardar,
+            this::cerrarSesionSinPreguntar);
+        bloqueo.iniciar();
+        Tema.atajo(getRootPane(), BloqueoPantalla.atajo(), () -> bloqueo.bloquear(false));
         respaldarSiHaceFalta();
         iniciarRecordatoriosDeCitas();
         addWindowListener(new java.awt.event.WindowAdapter() {
@@ -130,8 +139,11 @@ public class MenuPrincipal extends javax.swing.JFrame {
             long faltan = java.time.Duration.between(ahora, c.fechaHora).toMinutes();
             if ("programado".equals(c.estado) && faltan >= 0 && faltan <= MINUTOS_AVISO_PREVIO
                     && citasAvisadas.add(c.turnoId)) {
+                // Con la pantalla bloqueada el aviso no dice el nombre del estudiante
+                // (quien esté frente a la PC puede no ser el profesional).
                 Tema.mostrarNotificacion(this, "Cita " + ResumenDelDia.cuandoFalta(c.fechaHora, ahora)
-                    + " (" + c.fechaHora.format(hora) + "): " + c.estudiante);
+                    + " (" + c.fechaHora.format(hora) + ")"
+                    + (bloqueo != null && bloqueo.estaBloqueada() ? "" : ": " + c.estudiante));
                 java.awt.Toolkit.getDefaultToolkit().beep();
             }
         }
@@ -274,7 +286,7 @@ public class MenuPrincipal extends javax.swing.JFrame {
             "Configuración", "Cuenta, contraseña,\nusuarios y actividad",
             this::mostrarConfiguracion, 2), 3);
 
-        JLabel lblAtajos = new JLabel("Atajos: Ctrl+K buscar estudiante · Alt+1 Estudiantes · Alt+2 Panel · Alt+3 Configuración · Esc vuelve atrás · F11 pantalla completa",
+        JLabel lblAtajos = new JLabel("Atajos: Ctrl+K buscar estudiante · Ctrl+L bloquear · Alt+1 Estudiantes · Alt+2 Panel · Alt+3 Configuración · Esc vuelve atrás · F11 pantalla completa",
             SwingConstants.CENTER);
         lblAtajos.setFont(Tema.TEXTO_CHICO);
         lblAtajos.setForeground(Tema.TEXTO_SECUNDARIO);
@@ -490,6 +502,9 @@ public class MenuPrincipal extends javax.swing.JFrame {
     }
 
     private void cerrarSesionSinPreguntar() {
+        if (bloqueo != null) {
+            bloqueo.detener();
+        }
         if (timerRecordatorios != null) {
             timerRecordatorios.stop();
         }

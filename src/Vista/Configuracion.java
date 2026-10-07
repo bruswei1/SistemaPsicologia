@@ -248,6 +248,27 @@ public class Configuracion extends javax.swing.JPanel {
         });
         panel.add(btnModoOscuro);
 
+        // Bloqueo automático de pantalla (preferencia de esta PC).
+        JLabel lblBloqueo = new JLabel("Bloquear la pantalla tras");
+        panel.add(lblBloqueo);
+        String[] opciones = new String[BloqueoPantalla.OPCIONES_MINUTOS.length];
+        int seleccion = 1;
+        for (int i = 0; i < opciones.length; i++) {
+            int m = BloqueoPantalla.OPCIONES_MINUTOS[i];
+            opciones[i] = m == 0 ? "Nunca (solo con Ctrl+L)" : m + " minutos sin uso";
+            if (m == BloqueoPantalla.minutosConfigurados()) {
+                seleccion = i;
+            }
+        }
+        JComboBox<String> cmbBloqueo = new JComboBox<>(opciones);
+        cmbBloqueo.setSelectedIndex(seleccion);
+        cmbBloqueo.setToolTipText("Protege las fichas si alguien se levanta del escritorio. Ctrl+L bloquea al instante.");
+        cmbBloqueo.addActionListener(e -> {
+            BloqueoPantalla.guardarMinutos(BloqueoPantalla.OPCIONES_MINUTOS[cmbBloqueo.getSelectedIndex()]);
+            Tema.mostrarNotificacion(this, "Preferencia de bloqueo guardada");
+        });
+        panel.add(cmbBloqueo);
+
         // Exportar/abrir carpetas vivía antes acá; quien lo busque en este lugar encuentra la pista.
         JLabel lblReportes = new JLabel("Exportar estudiantes, respaldos y carpetas de archivos: Estudiantes → pestaña \"Reportes y archivos\"");
         lblReportes.setFont(Tema.TEXTO_CHICO);

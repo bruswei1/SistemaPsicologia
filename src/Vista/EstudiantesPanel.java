@@ -112,6 +112,11 @@ public class EstudiantesPanel extends javax.swing.JPanel {
         });
     }
 
+    /** true si hay una atención en curso (cronómetro andando) en la ficha abierta. */
+    boolean hayAtencionEnCurso() {
+        return fichaAbierta != null && fichaAbierta.cronometroEnMarcha();
+    }
+
     /** true si hay algo escrito y sin guardar (ficha abierta o panel de nuevo/editar estudiante). */
     boolean hayCambiosSinGuardar() {
         return (fichaAbierta != null && fichaAbierta.tieneBorrador()) || panelLista.tieneCambiosSinGuardar();

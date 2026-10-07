@@ -61,6 +61,10 @@ public class RespaldoBaseDatos {
                 out.println("-- Generado: " + LocalDateTime.now());
                 out.println("-- Este archivo solo tiene los DATOS; la estructura de las tablas se");
                 out.println("-- recrea aplicando los scripts de db-init/ en una base nueva.");
+                // El archivo está en UTF-8, pero el cliente mysql del contenedor Docker usa latin1 por
+                // defecto: sin esta línea, restaurar el respaldo rompía todas las tildes y eñes
+                // ("Técnico" quedaba "TÃ©cnico").
+                out.println("SET NAMES utf8mb4;");
                 out.println("SET FOREIGN_KEY_CHECKS=0;");
                 out.println();
 

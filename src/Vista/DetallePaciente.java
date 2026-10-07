@@ -127,6 +127,11 @@ public class DetallePaciente extends javax.swing.JPanel {
         });
     }
 
+    /** true mientras corre el cronómetro de una atención (el profesional está atendiendo). */
+    public boolean cronometroEnMarcha() {
+        return timerSesion != null && timerSesion.isRunning();
+    }
+
     /** true si hay una entrada de seguimiento o una atención escrita y todavía sin guardar. */
     public boolean tieneBorrador() {
         return hayBorradorSeguimiento() || hayBorradorAtencion();

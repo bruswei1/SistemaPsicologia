@@ -410,6 +410,22 @@ public class PacienteDAO extends DAO {
      * Cantidad de estudiantes por curso (para el panel "Estudiantes por curso" del Dashboard
      * y para las exportaciones). Solo cuenta filas con curso asignado.
      */
+    /** Todas las CI cargadas (de cualquier profesional), para evitar duplicados al importar. */
+    public java.util.Set<String> obtenerTodasLasCi() {
+        java.util.Set<String> cis = new java.util.HashSet<>();
+        String sql = "SELECT ci FROM pacientes WHERE ci IS NOT NULL AND ci <> ''";
+        try (Connection con = obtenerConexion();
+             PreparedStatement pst = con.prepareStatement(sql);
+             ResultSet rs = pst.executeQuery()) {
+            while (rs.next()) {
+                cis.add(rs.getString("ci").replaceAll("[.\\s-]", ""));
+            }
+        } catch (SQLException e) {
+            registrarError("obtener todas las CI", e);
+        }
+        return cis;
+    }
+
     public java.util.LinkedHashMap<String, Integer> contarPorCurso() {
         return contarPorCurso(null);
     }

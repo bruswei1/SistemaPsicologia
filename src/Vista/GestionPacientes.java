@@ -278,10 +278,18 @@ public class GestionPacientes extends javax.swing.JPanel {
         btnExportarLista.addActionListener(e -> exportarListaVisible());
         derecha.add(btnExportarLista);
 
+        JButton btnImportar = Tema.botonSecundario("Importar desde Excel", Icono.NUEVO);
+        btnImportar.setToolTipText("Cargar muchos estudiantes de una vez desde una planilla (por ejemplo, un curso entero)");
+        btnImportar.addActionListener(e -> ImportarEstudiantes.iniciar(this, importados -> {
+            recargarLista();
+            Tema.mostrarNotificacion(this, importados == 1 ? "Se importó 1 estudiante" : "Se importaron " + importados + " estudiantes");
+        }));
+        derecha.add(btnImportar);
+
         barra.add(izquierda, BorderLayout.WEST);
         barra.add(derecha, BorderLayout.EAST);
         // Con el panel lateral abierto o la ventana chica, quedan solo los íconos (no se superponen).
-        Tema.compactarAlAchicar(barra, btnVerFicha, btnEditar, btnEliminar, btnExportarLista);
+        Tema.compactarAlAchicar(barra, btnVerFicha, btnEditar, btnEliminar, btnExportarLista, btnImportar);
         return barra;
     }
 

@@ -197,22 +197,39 @@ public final class Tema {
     }
 
     private static boolean leerPreferenciaOscuro() {
-        java.util.Properties props = new java.util.Properties();
-        try (java.io.FileInputStream in = new java.io.FileInputStream(ARCHIVO_PREFERENCIA)) {
-            props.load(in);
-            return Boolean.parseBoolean(props.getProperty("oscuro", "false"));
-        } catch (java.io.IOException e) {
-            return false;
-        }
+        return Boolean.parseBoolean(leerPreferencia("oscuro", "false"));
     }
 
     private static void guardarPreferenciaOscuro() {
+        guardarPreferencia("oscuro", String.valueOf(oscuro));
+    }
+
+    private static java.util.Properties cargarPreferencias() {
         java.util.Properties props = new java.util.Properties();
-        props.setProperty("oscuro", String.valueOf(oscuro));
-        try (java.io.FileOutputStream out = new java.io.FileOutputStream(ARCHIVO_PREFERENCIA)) {
-            props.store(out, "Preferencia de tema - Depto. de Psicologia, Colegio San Roque Gonzalez");
+        try (java.io.FileInputStream in = new java.io.FileInputStream(ARCHIVO_PREFERENCIA)) {
+            props.load(in);
         } catch (java.io.IOException e) {
-            System.out.println("No se pudo guardar la preferencia de tema: " + e.getMessage());
+            // Sin archivo todavía: se usan los valores por defecto.
+        }
+        return props;
+    }
+
+    /** Preferencia local de esta PC (en tema.properties), o {@code porDefecto} si no está. */
+    public static String leerPreferencia(String clave, String porDefecto) {
+        return cargarPreferencias().getProperty(clave, porDefecto);
+    }
+
+    /**
+     * Guarda una preferencia local conservando las demás (antes el archivo se reescribía solo con
+     * "oscuro", así que cualquier otra preferencia se habría borrado).
+     */
+    public static void guardarPreferencia(String clave, String valor) {
+        java.util.Properties props = cargarPreferencias();
+        props.setProperty(clave, valor);
+        try (java.io.FileOutputStream out = new java.io.FileOutputStream(ARCHIVO_PREFERENCIA)) {
+            props.store(out, "Preferencias locales - Depto. de Psicologia, Colegio San Roque Gonzalez");
+        } catch (java.io.IOException e) {
+            System.out.println("No se pudo guardar la preferencia " + clave + ": " + e.getMessage());
         }
     }
 
@@ -1305,6 +1322,19 @@ public final class Tema {
             raiz.putClientProperty(PROP_HOJAS, lista);
         }
         return (java.util.List<JComponent>) lista;
+    }
+
+    /**
+     * Registra una capa modal propia (p. ej. la pantalla de bloqueo) como la de más arriba: con
+     * eso los atajos de {@link #atajo} y el Esc de las hojas de abajo quedan inactivos mientras
+     * esté puesta.
+     */
+    public static void registrarCapaModal(JComponent raiz, JComponent capa) {
+        hojasAbiertas(raiz).add(capa);
+    }
+
+    public static void quitarCapaModal(JComponent raiz, JComponent capa) {
+        hojasAbiertas(raiz).remove(capa);
     }
 
     private static boolean hayHojaAbierta(Component c) {
